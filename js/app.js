@@ -49,6 +49,16 @@ function textureBackground(hex, texture) {
       `;
     case "gloss":
       return `linear-gradient(135deg, ${shade(hex, 0.35)} 0%, ${hex} 40%, ${shade(hex, -0.08)} 100%)`;
+    case "concrete":
+      return `
+        radial-gradient(3px 3px at 15% 25%, ${rgbaFromHex(shade(hex, -0.3), 0.45)} 0%, transparent 60%),
+        radial-gradient(2px 2px at 65% 15%, ${rgbaFromHex(shade(hex, -0.25), 0.4)} 0%, transparent 60%),
+        radial-gradient(4px 4px at 40% 55%, ${rgbaFromHex(shade(hex, -0.2), 0.35)} 0%, transparent 60%),
+        radial-gradient(3px 3px at 80% 65%, ${rgbaFromHex(shade(hex, 0.25), 0.4)} 0%, transparent 60%),
+        radial-gradient(2px 2px at 25% 80%, ${rgbaFromHex(shade(hex, -0.28), 0.35)} 0%, transparent 60%),
+        radial-gradient(3px 3px at 90% 40%, ${rgbaFromHex(shade(hex, 0.2), 0.3)} 0%, transparent 60%),
+        linear-gradient(155deg, ${shade(hex, 0.06)}, ${hex} 55%, ${shade(hex, -0.06)})
+      `;
     case "metal":
       return `
         repeating-linear-gradient(100deg, ${rgbaFromHex(shade(hex, 0.4), 0.25)} 0px, transparent 2px, transparent 6px),
@@ -68,6 +78,7 @@ function textureBackground(hex, texture) {
 
 const TEXTURE_LABEL = {
   solid: "무광 단색",
+  concrete: "콘크리트 질감",
   wood: "우드그레인",
   gloss: "하이그로시",
   metal: "메탈릭",
@@ -347,8 +358,8 @@ function openPhotoModal() {
   $("#photo-desc").textContent = film.desc;
 
   const link = $("#photo-ref-link");
-  link.href = REFERENCE_SITE.url;
-  link.textContent = `${REFERENCE_SITE.name}에서 실사 이미지 보기 ↗`;
+  link.href = ebodaqLink(film.code);
+  link.textContent = `이보닥에서 ${film.code} 실사 이미지 보기 ↗`;
 
   $("#photo-modal").classList.remove("hidden");
 }
