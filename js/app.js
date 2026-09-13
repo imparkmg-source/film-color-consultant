@@ -1,4 +1,4 @@
-// 인테리어필름 컬러 상담소 — 화면 로직
+// 인테리어필름 컬러&견적 상담소 — 화면 로직
 
 const state = { categoryId: null, filmId: null, activeBudgetKey: null, lastBudget: null };
 
@@ -454,7 +454,7 @@ function buildEstimateDoc() {
     <div class="doc-header">
       <div>
         <h2>인테리어필름 시공 예상 견적서</h2>
-        <div class="doc-brand">인테리어필름 컬러 상담소</div>
+        <div class="doc-brand">인테리어필름 컬러&견적 상담소</div>
       </div>
       <div class="doc-meta">
         발행일: ${dateStr}<br />
