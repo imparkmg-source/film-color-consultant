@@ -1,6 +1,6 @@
 // 인테리어필름 컬러&견적 상담소 — 화면 로직
 
-const state = { categoryId: null, filmId: null, activeBudgetKey: null, lastBudget: null };
+const state = { categoryId: null, filmId: null, lastBudget: null };
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -335,7 +335,6 @@ function openDetail(catId, filmId) {
   const film = FILMS[catId].find((f) => f.id === filmId);
   state.categoryId = catId;
   state.filmId = filmId;
-  state.activeBudgetKey = null;
 
   $("#detail-tag").textContent = film.tag;
   $("#detail-name").textContent = `${cat.name} · ${film.name}`;
@@ -363,8 +362,6 @@ function openDetail(catId, filmId) {
   const tips = [...TEXTURE_TIPS[film.texture], CATEGORY_TIPS[catId]];
   tipsEl.innerHTML = tips.map((t) => `<li>${t}</li>`).join("");
 
-  $("#budget-detail").classList.add("hidden");
-  $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", "false"));
   runCalc();
 
   $("#detail-modal").classList.remove("hidden");
@@ -441,73 +438,31 @@ function runCalc() {
   state.lastBudget = b;
 
   $("#calc-size-note").textContent = `→ 약 ${formatQty(size)}${cat.unit} 기준으로 계산됩니다. ${cat.sizeInput.helpText}`;
-  $("#budget-material").textContent = `${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}`;
-  $("#budget-labor").textContent = `${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}`;
-  $("#budget-total").textContent = `${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}`;
+  renderReceipt(b);
 
   // 사이즈 선택에 따라 3D 시공 배치 시안도 함께 갱신
   buildMockup(cat.id, film);
-
-  if (state.activeBudgetKey) renderBudgetDetail(state.activeBudgetKey);
 }
 
-function renderBudgetDetail(key) {
-  const b = state.lastBudget;
-  if (!b) return;
-  let html = "";
-  if (key === "material") {
-    const rollRow = b.isRollConverted
-      ? `<dt>필요 길이(폭 1,220mm 기준)</dt><dd>${b.size}${b.unit} ÷ ${b.rollWidth}m = ${formatQty(b.neededLength)}m</dd>`
-      : "";
-    html = `
-      <div class="formula">필요 길이 × 로스율 12% × m당 단가 + 부자재비 + 배송비 = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</div>
-      <dl>
-        <dt>적용 등급</dt><dd>${b.gradeLabel}${b.fireRetardant ? " · 방염" : ""}</dd>
-        <dt>${b.rawLabel}</dt><dd>${b.rawValue}${b.rawUnitLabel} (약 ${formatQty(b.size)}${b.unit})</dd>
-        ${rollRow}
-        <dt>구매 길이(로스율 12% 포함)</dt><dd>${formatQty(b.purchaseLength)} ${b.materialUnit}</dd>
-        <dt>필름 단가 (온라인 소매가 기준)</dt><dd>${formatWon(b.priceLow)} ~ ${formatWon(b.priceHigh)} / ${b.materialUnit}${b.fireRetardant ? " (방염 할증 반영)" : ""}</dd>
-        <dt>필름 자재비</dt><dd>${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</dd>
-        <dt>부자재비 (프라이머 등, 자재비의 10%)</dt><dd>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}</dd>
-        <dt>배송비</dt><dd>${formatWon(b.deliveryFee)}</dd>
-        <dt>자재비 소계</dt><dd>${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</dd>
-      </dl>
-    `;
-  } else if (key === "labor") {
-    html = `
-      <div class="formula">${b.size}${b.unit} × 단가 = ${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</div>
-      <dl>
-        <dt>산정 기준</dt><dd>${b.laborNote}</dd>
-        <dt>인건비 소계</dt><dd>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</dd>
-      </dl>
-    `;
-  } else {
-    html = `
-      <div class="formula">자재비(부자재·배송 포함) + 인건비 = ${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</div>
-      <dl>
-        <dt>필름 자재비</dt><dd>${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</dd>
-        <dt>부자재비</dt><dd>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}</dd>
-        <dt>배송비</dt><dd>${formatWon(b.deliveryFee)}</dd>
-        <dt>인건비</dt><dd>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</dd>
-        <dt>합계</dt><dd>${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</dd>
-      </dl>
-    `;
-  }
-  const detail = $("#budget-detail");
-  detail.innerHTML = html;
-  detail.classList.remove("hidden");
-}
+// 예상 견적 명세(영수증 스타일)를 항상 펼쳐진 상태로 렌더링한다.
+function renderReceipt(b) {
+  const rollLine = b.isRollConverted
+    ? `${b.rawLabel} ${b.rawValue}${b.rawUnitLabel}(약 ${formatQty(b.size)}${b.unit}) → 필름 길이 ${formatQty(b.neededLength)}m`
+    : `${b.rawLabel} ${b.rawValue}${b.rawUnitLabel}(약 ${formatQty(b.size)}${b.unit})`;
+  $("#receipt-meta").textContent =
+    `${b.gradeLabel}${b.fireRetardant ? " · 방염" : " · 비방염"} · ${rollLine}`;
 
-function toggleBudgetDetail(key) {
-  if (state.activeBudgetKey === key) {
-    state.activeBudgetKey = null;
-    $("#budget-detail").classList.add("hidden");
-    $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", "false"));
-    return;
-  }
-  state.activeBudgetKey = key;
-  $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", String(c.dataset.key === key)));
-  renderBudgetDetail(key);
+  $("#r-film").textContent = `${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}`;
+  $("#r-film-note").textContent =
+    `단가(온라인 소매가 기준) ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.materialUnit} × 구매 길이 ${formatQty(b.purchaseLength)}${b.materialUnit}(로스율 12% 포함)${b.fireRetardant ? " · 방염 할증 반영" : ""}`;
+  $("#r-ancillary").textContent = `${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}`;
+  $("#r-delivery").textContent = formatWon(b.deliveryFee);
+  $("#r-material-subtotal").textContent = `${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}`;
+
+  $("#r-labor").textContent = `${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}`;
+  $("#r-labor-note").textContent = b.laborNote;
+
+  $("#r-total").textContent = `${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}`;
 }
 
 function closeDetail() {
@@ -704,10 +659,6 @@ document.addEventListener("keydown", (e) => {
 
 $("#calc-size").addEventListener("change", runCalc);
 $("#calc-fire").addEventListener("change", runCalc);
-
-$$(".budget-card").forEach((card) => {
-  card.addEventListener("click", () => toggleBudgetDetail(card.dataset.key));
-});
 
 // ---------- 참고 정보 (방염 안내 · 브랜드 가이드) ----------
 function renderStaticInfo() {

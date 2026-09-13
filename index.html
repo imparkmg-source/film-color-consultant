@@ -108,24 +108,42 @@
             <input type="checkbox" id="calc-fire" />
             <span>방염 필름으로 계산 (다중이용업소 등은 의무 · 주거공간은 선택)</span>
           </label>
-          <div class="budget-grid" id="budget-grid">
-            <button class="budget-card" id="card-material" data-key="material" aria-expanded="false">
-              <span class="budget-label">자재비</span>
-              <span class="budget-value" id="budget-material">-</span>
-              <span class="budget-caret">산출 근거 ▾</span>
-            </button>
-            <button class="budget-card" id="card-labor" data-key="labor" aria-expanded="false">
-              <span class="budget-label">인건비</span>
-              <span class="budget-value" id="budget-labor">-</span>
-              <span class="budget-caret">산출 근거 ▾</span>
-            </button>
-            <button class="budget-card budget-total" id="card-total" data-key="total" aria-expanded="false">
-              <span class="budget-label">합계 (예상)</span>
-              <span class="budget-value" id="budget-total">-</span>
-              <span class="budget-caret">산출 근거 ▾</span>
-            </button>
+          <div class="receipt-frame">
+            <div class="receipt-tear"></div>
+            <div class="receipt-body">
+              <div class="receipt-title">예상 견적 명세</div>
+              <div class="receipt-sub">인테리어필름 컬러&amp;견적 상담소</div>
+              <div class="receipt-meta" id="receipt-meta"></div>
+
+              <div class="receipt-group-title">자재비</div>
+              <div class="receipt-row">
+                <span>필름 자재비</span><span class="rl"></span><span class="amt" id="r-film">-</span>
+              </div>
+              <div class="receipt-row-note" id="r-film-note"></div>
+              <div class="receipt-row">
+                <span>부자재비</span><span class="rl"></span><span class="amt" id="r-ancillary">-</span>
+              </div>
+              <div class="receipt-row-note">프라이머·사포·마스킹테이프 등, 자재비의 10%</div>
+              <div class="receipt-row">
+                <span>배송비</span><span class="rl"></span><span class="amt" id="r-delivery">-</span>
+              </div>
+              <div class="receipt-row subtotal">
+                <span>소계</span><span class="rl"></span><span class="amt" id="r-material-subtotal">-</span>
+              </div>
+
+              <div class="receipt-group-title">인건비</div>
+              <div class="receipt-row">
+                <span>시공 인건비</span><span class="rl"></span><span class="amt" id="r-labor">-</span>
+              </div>
+              <div class="receipt-row-note" id="r-labor-note"></div>
+
+              <div class="receipt-total-hero">
+                <span class="receipt-total-label">합계 (예상)</span>
+                <span class="receipt-total-value" id="r-total">-</span>
+              </div>
+            </div>
+            <div class="receipt-tear bottom"></div>
           </div>
-          <div id="budget-detail" class="budget-detail hidden"></div>
           <p class="small-note">※ 실측 전 참고용 예상 견적이며, 현장 상태(모서리 수, 기존 필름 제거 여부, 층수·엘리베이터 유무 등)에 따라 실제 견적은 달라질 수 있습니다. 로스율 12%·부자재비·배송비가 반영된 금액입니다. 필름 단가는 시공업체 도매가가 아니라 온라인 쇼핑몰 등에서 1~2.5m 소량 구매 시 소매가를 기준으로 했습니다.</p>
           <p class="small-note" id="fire-note"></p>
           <details class="brand-guide">
