@@ -64,7 +64,7 @@
         <div class="preview-block">
           <div class="preview-block-head">
             <h4>질감 확대 미리보기</h4>
-            <button id="btn-photo-ref" class="btn-ghost btn-xs">실사 이미지 참고 ↗</button>
+            <a id="btn-photo-ref" class="btn-ghost btn-xs" href="#" target="_blank" rel="noopener noreferrer">실사 이미지 참고 ↗</a>
           </div>
           <div id="swatch-macro" class="swatch-macro"></div>
           <p class="small-note">※ 이보닥(ebodaq) 공식 사이트의 실제 제품 이미지를 불러옵니다. 이미지를 불러오지 못할 경우에만 근사 색상 시뮬레이션으로 대체 표시됩니다. 화면·조명에 따라 실물과 차이가 있을 수 있어, 최종 결정 전 반드시 실물 샘플북으로 색상을 확인하시길 권장합니다.</p>
@@ -128,26 +128,6 @@
     </div>
     <div class="estimate-scroll">
       <div id="estimate-doc" class="estimate-doc"></div>
-    </div>
-  </div>
-</div>
-
-<!-- 실사 이미지 참고 모달 -->
-<div id="photo-modal" class="modal-overlay hidden">
-  <div class="modal modal-narrow">
-    <button id="btn-close-photo" class="modal-close" aria-label="닫기">&times;</button>
-    <div class="photo-modal-body">
-      <div id="photo-hero" class="photo-hero"></div>
-      <div class="photo-info">
-        <span class="preview-tag" id="photo-tag"></span>
-        <h3 id="photo-name"></h3>
-        <p class="code-line">제품코드 <code id="photo-code"></code></p>
-        <p class="muted" id="photo-desc"></p>
-        <div class="photo-note">
-          <p>위 이미지는 이보닥(ebodaq) 공식 사이트에서 실시간으로 불러온 이 제품의 실제 사진입니다. 아래 링크를 누르면 이 제품코드로 검색된 상세 페이지가 새 탭에서 열립니다.</p>
-          <a id="photo-ref-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary btn-sm">실사 이미지 보기 ↗</a>
-        </div>
-      </div>
     </div>
   </div>
 </div>

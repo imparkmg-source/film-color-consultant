@@ -18,7 +18,7 @@ const CATEGORIES = [
     unit: "자(30cm 폭)",
     defaultSize: 10,
     tint: { light: "#ECE6F7", dark: "#332C49" },
-    mockup: { type: "cabinet", w: 128, h: 176, d: 34, doors: 2, handles: true },
+    mockup: { type: "cabinet", w: 166, h: 228, d: 44, doors: 2, handles: true },
   },
   {
     id: "sink",
@@ -38,7 +38,7 @@ const CATEGORIES = [
     unit: "자(30cm 폭)",
     defaultSize: 3,
     tint: { light: "#FCEBDD", dark: "#3E2E22" },
-    mockup: { type: "cabinet", w: 92, h: 188, d: 14, doors: 1, handles: true, frame: true },
+    mockup: { type: "cabinet", w: 120, h: 244, d: 18, doors: 1, handles: true, frame: true },
   },
   {
     id: "jungmoon",
@@ -48,7 +48,7 @@ const CATEGORIES = [
     unit: "자(30cm 폭)",
     defaultSize: 4,
     tint: { light: "#E1EAF8", dark: "#233047" },
-    mockup: { type: "glass", w: 128, h: 188, d: 16 },
+    mockup: { type: "glass", w: 166, h: 244, d: 21 },
   },
   {
     id: "molding",
@@ -68,7 +68,7 @@ const CATEGORIES = [
     unit: "자(30cm 폭)",
     defaultSize: 6,
     tint: { light: "#FBE5EC", dark: "#3C2530" },
-    mockup: { type: "cabinet", w: 150, h: 96, d: 34, doors: 3, handles: true },
+    mockup: { type: "cabinet", w: 195, h: 125, d: 44, doors: 3, handles: true },
   },
 ];
 

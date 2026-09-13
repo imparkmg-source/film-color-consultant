@@ -234,12 +234,12 @@ function cabinetHTML(cfg, frontBg, texture, extraFrontContent) {
   `;
 }
 function kitchenHTML(frontBg, texture) {
-  const upper = cabinetHTML({ w: 108, h: 56, d: 26, doors: 2, handles: false }, frontBg, texture);
-  const lower = cabinetHTML({ w: 172, h: 92, d: 42, doors: 3, handles: true }, frontBg, texture);
+  const upper = cabinetHTML({ w: 140, h: 73, d: 34, doors: 2, handles: false }, frontBg, texture);
+  const lower = cabinetHTML({ w: 224, h: 120, d: 55, doors: 3, handles: true }, frontBg, texture);
   return `
     <div class="mockup-kitchen">
       <div class="upper">${upper}</div>
-      <div class="counter-line" style="--kw:172"></div>
+      <div class="counter-line" style="--kw:224"></div>
       <div class="lower">${lower}</div>
     </div>
   `;
@@ -292,6 +292,10 @@ function openDetail(catId, filmId) {
   const macro = $("#swatch-macro");
   macro.style.background = bg;
   macro.className = "swatch-macro" + (film.texture === "gloss" ? " shine" : "");
+
+  const photoRef = $("#btn-photo-ref");
+  photoRef.href = ebodaqLink(film.code);
+  photoRef.textContent = `이보닥에서 ${film.code} 실사 이미지 보기 ↗`;
 
   buildMockup(catId, film);
 
@@ -401,31 +405,6 @@ function toggleBudgetDetail(key) {
 function closeDetail() {
   $("#detail-modal").classList.add("hidden");
   document.body.style.overflow = "";
-}
-
-// ---------- 실사 이미지 참고 모달 ----------
-function openPhotoModal() {
-  const cat = CATEGORIES.find((c) => c.id === state.categoryId);
-  const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
-
-  const bg = filmBackground(film, "preview");
-  const hero = $("#photo-hero");
-  hero.style.background = bg;
-  hero.className = "photo-hero" + (film.texture === "gloss" ? " shine" : "");
-
-  $("#photo-tag").textContent = `${cat.name} · ${TEXTURE_LABEL[film.texture]}`;
-  $("#photo-name").textContent = film.name;
-  $("#photo-code").textContent = film.code;
-  $("#photo-desc").textContent = film.desc;
-
-  const link = $("#photo-ref-link");
-  link.href = ebodaqLink(film.code);
-  link.textContent = `이보닥에서 ${film.code} 실사 이미지 보기 ↗`;
-
-  $("#photo-modal").classList.remove("hidden");
-}
-function closePhotoModal() {
-  $("#photo-modal").classList.add("hidden");
 }
 
 // ---------- 예상 견적서 (A4 인쇄/PDF) ----------
@@ -562,11 +541,6 @@ $("#btn-close-modal").addEventListener("click", closeDetail);
 $("#detail-modal").addEventListener("click", (e) => {
   if (e.target.id === "detail-modal") closeDetail();
 });
-$("#btn-photo-ref").addEventListener("click", openPhotoModal);
-$("#btn-close-photo").addEventListener("click", closePhotoModal);
-$("#photo-modal").addEventListener("click", (e) => {
-  if (e.target.id === "photo-modal") closePhotoModal();
-});
 
 $("#btn-estimate").addEventListener("click", openEstimateModal);
 $("#btn-close-estimate").addEventListener("click", closeEstimateModal);
@@ -577,8 +551,7 @@ $("#estimate-modal").addEventListener("click", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  if (!$("#photo-modal").classList.contains("hidden")) closePhotoModal();
-  else if (!$("#estimate-modal").classList.contains("hidden")) closeEstimateModal();
+  if (!$("#estimate-modal").classList.contains("hidden")) closeEstimateModal();
   else if (!$("#detail-modal").classList.contains("hidden")) closeDetail();
 });
 
