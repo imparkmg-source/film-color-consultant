@@ -9,6 +9,8 @@ function ebodaqLink(code) {
   return `https://www.ebodaq.com/Product/Product/Detail?pattern=&gloss=&color=&listType=0&searchText=${encodeURIComponent(code)}&sortOrder=2&currentPage=1&pageSize=10000&idProduct=0`;
 }
 
+// sizeInput: 비전문가 고객이 실측 없이도 고를 수 있는 친숙한 단위(자/평/개수)로 사이즈를 고르게 하고,
+// factor를 곱해 내부적으로 ㎡(또는 m) 실측 면적으로 환산합니다. (1자 ≈ 30.3cm 표준)
 const CATEGORIES = [
   {
     id: "wardrobe",
@@ -16,9 +18,17 @@ const CATEGORIES = [
     icon: "🗄️",
     desc: "안방·옷방 붙박이장, 드레스룸 도어 필름",
     unit: "㎡",
-    defaultSize: 8,
     tint: { light: "#ECE6F7", dark: "#332C49" },
     mockup: { type: "cabinet", w: 166, h: 228, d: 44, doors: 2, handles: true },
+    sizeInput: {
+      mode: "ja",
+      label: "붙박이장 폭",
+      unitLabel: "자",
+      options: [2, 3, 4, 5, 6, 7, 8, 10, 12],
+      default: 10,
+      factor: 0.8,
+      helpText: "1자(약 30.3cm) 폭 × 높이 약 2.3m 기준으로 필요 면적을 추정합니다.",
+    },
   },
   {
     id: "sink",
@@ -26,9 +36,17 @@ const CATEGORIES = [
     icon: "🍽️",
     desc: "하부장·상부장 도어, 옆판 필름",
     unit: "㎡",
-    defaultSize: 11,
     tint: { light: "#DFF3EA", dark: "#1F3A30" },
     mockup: { type: "kitchen" },
+    sizeInput: {
+      mode: "ja",
+      label: "싱크대 폭",
+      unitLabel: "자",
+      options: [6, 7, 8, 9, 10, 12, 15],
+      default: 12,
+      factor: 0.9,
+      helpText: "1자(약 30.3cm) 폭당 상부장+하부장 도어 면적을 기준으로 추정합니다.",
+    },
   },
   {
     id: "door",
@@ -36,9 +54,17 @@ const CATEGORIES = [
     icon: "🚪",
     desc: "실내 방문 필름 리폼 (문틀 포함)",
     unit: "㎡",
-    defaultSize: 3.5,
     tint: { light: "#FCEBDD", dark: "#3E2E22" },
     mockup: { type: "cabinet", w: 120, h: 244, d: 18, doors: 1, handles: true, frame: true },
+    sizeInput: {
+      mode: "count",
+      label: "방문 개수",
+      unitLabel: "개",
+      options: [1, 2, 3, 4, 5, 6, 7, 8],
+      default: 1,
+      factor: 3.5,
+      helpText: "문 1개(양면+문틀)당 약 3.5㎡ 기준으로 추정합니다.",
+    },
   },
   {
     id: "jungmoon",
@@ -46,9 +72,17 @@ const CATEGORIES = [
     icon: "🪟",
     desc: "현관 중문·거실 파티션 필름",
     unit: "㎡",
-    defaultSize: 3,
     tint: { light: "#E1EAF8", dark: "#233047" },
     mockup: { type: "glass", w: 166, h: 244, d: 21 },
+    sizeInput: {
+      mode: "count",
+      label: "중문 개소",
+      unitLabel: "조",
+      options: [1, 2, 3],
+      default: 1,
+      factor: 3.0,
+      helpText: "중문 1조(프레임 기준, 유리 제외)당 약 3㎡ 기준으로 추정합니다.",
+    },
   },
   {
     id: "molding",
@@ -56,9 +90,17 @@ const CATEGORIES = [
     icon: "📏",
     desc: "천장 몰딩, 바닥 걸레받이 라인 필름",
     unit: "m",
-    defaultSize: 80,
     tint: { light: "#FBF1D6", dark: "#3E351D" },
     mockup: { type: "corner" },
+    sizeInput: {
+      mode: "pyeong",
+      label: "전용면적",
+      unitLabel: "평",
+      options: [18, 24, 32, 34, 44, 59, 84],
+      default: 24,
+      factor: 3.333,
+      helpText: "전용면적 1평당 몰딩+걸레받이 합산 약 3.3m 기준 개략 추정치입니다. 실제로는 벽 둘레 실측이 더 정확합니다.",
+    },
   },
   {
     id: "shoe",
@@ -66,9 +108,17 @@ const CATEGORIES = [
     icon: "👞",
     desc: "현관 신발장 도어 필름",
     unit: "㎡",
-    defaultSize: 4.5,
     tint: { light: "#FBE5EC", dark: "#3C2530" },
     mockup: { type: "cabinet", w: 195, h: 125, d: 44, doors: 3, handles: true },
+    sizeInput: {
+      mode: "ja",
+      label: "신발장 폭",
+      unitLabel: "자",
+      options: [4, 5, 6, 7, 8, 10],
+      default: 7,
+      factor: 0.65,
+      helpText: "1자(약 30.3cm) 폭, 일반적인 신발장 높이 기준으로 추정합니다.",
+    },
   },
 ];
 

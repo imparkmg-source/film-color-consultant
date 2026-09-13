@@ -305,8 +305,10 @@ function openDetail(catId, filmId) {
   tipsEl.innerHTML = tips.map((t) => `<li>${t}</li>`).join("");
 
   // 예산 계산기 초기화
-  $("#calc-size-label").textContent = `사이즈 (${cat.unit})`;
-  $("#calc-size").value = cat.defaultSize;
+  $("#calc-size-label").textContent = cat.sizeInput.label;
+  $("#calc-size").innerHTML = cat.sizeInput.options
+    .map((v) => `<option value="${v}"${v === cat.sizeInput.default ? " selected" : ""}>${v}${cat.sizeInput.unitLabel}</option>`)
+    .join("");
   $("#calc-fire").checked = false;
   $("#budget-detail").classList.add("hidden");
   $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", "false"));
@@ -366,11 +368,16 @@ function computeBudget(catId, texture, size, fireRetardant) {
 function runCalc() {
   const cat = CATEGORIES.find((c) => c.id === state.categoryId);
   const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
-  const size = Math.max(0.5, Number($("#calc-size").value) || 0.5);
+  const rawValue = Number($("#calc-size").value) || cat.sizeInput.default;
+  const size = Math.max(0.5, rawValue * cat.sizeInput.factor);
   const fireRetardant = $("#calc-fire").checked;
   const b = computeBudget(cat.id, film.texture, size, fireRetardant);
+  b.rawValue = rawValue;
+  b.rawUnitLabel = cat.sizeInput.unitLabel;
+  b.rawLabel = cat.sizeInput.label;
   state.lastBudget = b;
 
+  $("#calc-size-note").textContent = `→ 약 ${formatQty(size)}${cat.unit} 기준으로 계산됩니다. ${cat.sizeInput.helpText}`;
   $("#budget-material").textContent = `${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}`;
   $("#budget-labor").textContent = `${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}`;
   $("#budget-total").textContent = `${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}`;
@@ -387,7 +394,7 @@ function renderBudgetDetail(key) {
       <div class="formula">(${b.size}${b.unit} × 로스율 12%) × 단가 + 부자재비 + 배송비 = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</div>
       <dl>
         <dt>적용 등급</dt><dd>${b.gradeLabel}${b.fireRetardant ? " · 방염" : ""}</dd>
-        <dt>실측 면적</dt><dd>${b.size} ${b.unit}</dd>
+        <dt>${b.rawLabel}</dt><dd>${b.rawValue}${b.rawUnitLabel} (약 ${formatQty(b.size)}${b.unit})</dd>
         <dt>구매 수량(로스율 12% 포함)</dt><dd>${formatQty(b.purchaseQty)} ${b.unit}</dd>
         <dt>필름 단가</dt><dd>${formatWon(b.priceLow)} ~ ${formatWon(b.priceHigh)} / ${b.unit}${b.fireRetardant ? " (방염 할증 반영)" : ""}</dd>
         <dt>필름 자재비</dt><dd>${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</dd>
@@ -486,7 +493,7 @@ function buildEstimateDoc() {
       <table>
         <tr><th>시공 부위</th><td>${cat.name}</td></tr>
         <tr><th>선택 컬러</th><td>${film.name} (${film.code}) · ${b.gradeLabel}${b.fireRetardant ? " · 방염" : " · 비방염"}</td></tr>
-        <tr><th>실측 면적</th><td>${b.size} ${b.unit} (로스율 12% 반영 구매 수량 ${formatQty(b.purchaseQty)} ${b.unit})</td></tr>
+        <tr><th>${b.rawLabel}</th><td>${b.rawValue}${b.rawUnitLabel} → 약 ${formatQty(b.size)}${b.unit} (로스율 12% 반영 구매 수량 ${formatQty(b.purchaseQty)} ${b.unit})</td></tr>
         <tr><th>필름 자재비</th><td>단가 ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.unit} × ${formatQty(b.purchaseQty)}${b.unit} = ${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</td></tr>
         <tr><th>부자재비</th><td>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)} (프라이머·사포·마스킹테이프 등, 자재비의 10%)</td></tr>
         <tr><th>배송비</th><td>${formatWon(b.deliveryFee)}</td></tr>
@@ -570,6 +577,36 @@ ${$("#estimate-doc").outerHTML}
   }, 350);
 }
 
+// ---------- 다크모드 / 라이트모드 토글 ----------
+const THEME_ICON = {
+  // 라이트 모드일 땐 달(누르면 다크로), 다크 모드일 땐 해(누르면 라이트로) 아이콘을 보여준다.
+  sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>`,
+  moon: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.2 14.9A8.4 8.4 0 0 1 9 3.8a8.5 8.5 0 1 0 11.2 11.1z"/></svg>`,
+};
+function effectiveTheme() {
+  const explicit = document.documentElement.getAttribute("data-theme");
+  if (explicit === "light" || explicit === "dark") return explicit;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function renderThemeToggle() {
+  const eff = effectiveTheme();
+  const btn = $("#theme-toggle");
+  btn.innerHTML = eff === "dark" ? THEME_ICON.sun : THEME_ICON.moon;
+  btn.setAttribute("aria-label", eff === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환");
+}
+function setTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  try {
+    localStorage.setItem("theme", theme);
+  } catch (e) {
+    /* 저장 실패해도 화면 전환 자체는 동작 */
+  }
+  renderThemeToggle();
+}
+$("#theme-toggle").addEventListener("click", () => {
+  setTheme(effectiveTheme() === "dark" ? "light" : "dark");
+});
+
 // ---------- 이벤트 바인딩 ----------
 $("#btn-back-category").addEventListener("click", () => {
   $("#step-films").classList.add("hidden");
@@ -595,7 +632,7 @@ document.addEventListener("keydown", (e) => {
   else if (!$("#detail-modal").classList.contains("hidden")) closeDetail();
 });
 
-$("#calc-size").addEventListener("input", runCalc);
+$("#calc-size").addEventListener("change", runCalc);
 $("#calc-fire").addEventListener("change", runCalc);
 
 $$(".budget-card").forEach((card) => {
@@ -619,3 +656,4 @@ function renderStaticInfo() {
 // ---------- 초기화 ----------
 renderCategories();
 renderStaticInfo();
+renderThemeToggle();
