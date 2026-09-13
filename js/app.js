@@ -305,7 +305,7 @@ function scaledMockupConfig(catId) {
     case "jungmoon":
       return { ...base, count: clampInt(raw, 1, 3) };
     case "molding":
-      return { ...base, scale: raw <= 24 ? 1 : raw <= 44 ? 1.15 : 1.3 };
+      return { ...base, scale: raw <= 24 ? 1 : raw <= 44 ? 1.08 : 1.16 };
     default:
       return base;
   }
@@ -466,7 +466,7 @@ function renderBudgetDetail(key) {
         <dt>${b.rawLabel}</dt><dd>${b.rawValue}${b.rawUnitLabel} (약 ${formatQty(b.size)}${b.unit})</dd>
         ${rollRow}
         <dt>구매 길이(로스율 12% 포함)</dt><dd>${formatQty(b.purchaseLength)} ${b.materialUnit}</dd>
-        <dt>필름 단가</dt><dd>${formatWon(b.priceLow)} ~ ${formatWon(b.priceHigh)} / ${b.materialUnit}${b.fireRetardant ? " (방염 할증 반영)" : ""}</dd>
+        <dt>필름 단가 (온라인 소매가 기준)</dt><dd>${formatWon(b.priceLow)} ~ ${formatWon(b.priceHigh)} / ${b.materialUnit}${b.fireRetardant ? " (방염 할증 반영)" : ""}</dd>
         <dt>필름 자재비</dt><dd>${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</dd>
         <dt>부자재비 (프라이머 등, 자재비의 10%)</dt><dd>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}</dd>
         <dt>배송비</dt><dd>${formatWon(b.deliveryFee)}</dd>
@@ -564,7 +564,7 @@ function buildEstimateDoc() {
         <tr><th>시공 부위</th><td>${cat.name}</td></tr>
         <tr><th>선택 컬러</th><td>${film.name} (${film.code}) · ${b.gradeLabel}${b.fireRetardant ? " · 방염" : " · 비방염"}</td></tr>
         <tr><th>${b.rawLabel}</th><td>${b.rawValue}${b.rawUnitLabel} → 약 ${formatQty(b.size)}${b.unit}${b.isRollConverted ? ` → 필름 길이 ${formatQty(b.neededLength)}m (폭 1,220mm 기준)` : ""}, 로스율 12% 반영 구매 길이 ${formatQty(b.purchaseLength)}${b.materialUnit}</td></tr>
-        <tr><th>필름 자재비</th><td>단가 ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.materialUnit} × ${formatQty(b.purchaseLength)}${b.materialUnit} = ${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</td></tr>
+        <tr><th>필름 자재비</th><td>단가(온라인 소매가 기준) ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.materialUnit} × ${formatQty(b.purchaseLength)}${b.materialUnit} = ${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</td></tr>
         <tr><th>부자재비</th><td>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)} (프라이머·사포·마스킹테이프 등, 자재비의 10%)</td></tr>
         <tr><th>배송비</th><td>${formatWon(b.deliveryFee)}</td></tr>
         <tr><th>인건비</th><td>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)} (${b.laborNote})</td></tr>
@@ -580,7 +580,7 @@ function buildEstimateDoc() {
     </div>
 
     <div class="doc-footer">
-      제품 이미지는 이보닥(ebodaq) 공식 사이트에서 불러온 참고용 이미지입니다. 본 견적서는 웹 조사를 기반으로 한 참고용 단가로 산출한 예상 금액이며, 법적 효력이 있는 정식 견적서가 아닙니다. 실제 시공 견적은 현장 실측·브랜드/제품 선택·지역·업체에 따라 달라질 수 있습니다. ${FIRE_RETARDANT_INFO.mandatoryText} ${FIRE_RETARDANT_INFO.residentialText}
+      제품 이미지는 이보닥(ebodaq) 공식 사이트에서 불러온 참고용 이미지입니다. 본 견적서는 웹 조사를 기반으로 한 참고용 단가로 산출한 예상 금액이며, 법적 효력이 있는 정식 견적서가 아닙니다. 필름 자재 단가는 시공업체 도매가가 아니라 온라인 쇼핑몰 등에서 1~2.5m 소량 구매 시 소매가를 기준으로 했으며, 대량 구매 시 더 저렴할 수 있습니다. 실제 시공 견적은 현장 실측·브랜드/제품 선택·지역·업체에 따라 달라질 수 있습니다. ${FIRE_RETARDANT_INFO.mandatoryText} ${FIRE_RETARDANT_INFO.residentialText}
     </div>
   `;
 }

@@ -245,6 +245,13 @@ const CATEGORY_TIPS = {
 // "필름 길이(m)"로 환산한 뒤, m당 단가를 곱해 계산합니다. (몰딩·걸레받이는 폭이 훨씬 좁은
 // 별도 제품이라 처음부터 길이(m) 기준으로 계산하며 이 환산을 적용하지 않습니다.)
 //
+// ※ 자재 단가 기준: 시공업체가 받는 도매가가 아니라, 일반 소비자가 필름 판매 점포·온라인
+// 쇼핑몰(쿠팡·SSG·다나와 등)에서 1~2.5m 정도 소량으로 구매할 때의 판매가를 기준으로 잡았습니다.
+// 실제 보닥 브랜드 제품의 소량 판매가를 확인한 결과(다나와 122cm×1m 컷 8,800~9,100원,
+// SSG닷컴 보닥 프리미엄 단색 2.5m 28,000원=11,200원/m, 우드패턴 2.5m 40,250원=16,100원/m),
+// 기존에 산정해 둔 단가 범위가 실제 소매가와 비슷한 수준임을 확인했습니다. 대량 구매(도매)
+// 시에는 이보다 저렴할 수 있습니다.
+//
 // 참고한 자료:
 // - 숨고 인테리어필름 시공 견적 통계(건당 평균 58만원, 18만~270만원)
 //   https://soomgo.com/prices/인테리어-필름-시공
@@ -255,6 +262,10 @@ const CATEGORY_TIPS = {
 // - 방문(문짝+문틀) 한 틀 시공 현장 통용가 약 18만원(자재 6~7만원 + 인건비 약 10만원):
 //   https://ulmadna.com/blog/film-construction-cost , 문틀은 모서리·몰딩이 많아 문짝보다
 //   시공 난이도가 높다는 점도 함께 확인: https://ohou.se/advices/2259
+// - 보닥 소량(1m) 소매가 8,800~9,100원/m: 다나와(danawa) 현대L&C 보닥 인테리어필름 122cm×1m
+//   https://prod.danawa.com/info/?pcode=8126095
+// - 보닥 프리미엄 2.5m 소매가(단색 11,200원/m, 우드 16,100원/m): SSG.COM
+//   https://www.ssg.com/item/itemView.ssg?itemId=1000552379518
 // - 시트메카 보닥 필름 소매가(단색 9,900원대, 프리미엄 우드·마블·메탈 13,000~16,500원대)
 //   https://sheetmeca.com/category/현대lc보닥-인테리어필름/48/
 // - LX하우시스 대리점 50m 롤 판매가(약 70만~100만원/롤 → 14,000~20,000원/m)
@@ -303,8 +314,8 @@ const BRAND_GUIDE = [
   {
     brand: "현대L&C 보닥 (Bodaq)",
     tier: "프리미엄",
-    priceRange: "8,000~20,000원/m",
-    note: "본 사이트 제품 데이터의 기준 브랜드(폭 1,220mm 롤 기준). 우드그레인·마블·메탈 등 고급 질감 라인이 강점입니다.",
+    priceRange: "8,500~20,000원/m",
+    note: "본 사이트 제품 데이터의 기준 브랜드(폭 1,220mm 롤, 1~2.5m 소량 구매 온라인 소매가 기준). 우드그레인·마블·메탈 등 고급 질감 라인이 강점입니다. 대량 구매 시 더 저렴할 수 있습니다.",
   },
   {
     brand: "LX하우시스",
@@ -333,25 +344,25 @@ const BRAND_GUIDE = [
 // laborUnitPrice: ㎡(또는 m)당 인건비 단가 [최소, 최대] — 최소 출장 시공비 개념 포함
 const BUDGET = {
   wardrobe: {
-    materialUnitPrice: { basic: [8000, 12000], premium: [14000, 20000] },
+    materialUnitPrice: { basic: [8500, 12500], premium: [14000, 20000] },
     rollWidthM: ROLL_WIDTH_M,
     laborUnitPrice: [37500, 56250],
     laborNote: "붙박이장(3~4칸 도어 기준) — 기사 1인, 반나절~1일(약 4~6시간) 소요",
   },
   sink: {
-    materialUnitPrice: { basic: [8000, 12000], premium: [14000, 20000] },
+    materialUnitPrice: { basic: [8500, 12500], premium: [14000, 20000] },
     rollWidthM: ROLL_WIDTH_M,
     laborUnitPrice: [27300, 41000],
     laborNote: "상부장+하부장 세트 — 기사 1인, 1일(약 6~8시간) 소요",
   },
   door: {
-    materialUnitPrice: { basic: [8000, 12000], premium: [14000, 20000] },
+    materialUnitPrice: { basic: [8500, 12500], premium: [14000, 20000] },
     rollWidthM: ROLL_WIDTH_M,
     laborUnitPrice: [25700, 42900],
     laborNote: "방문 1개(문짝 양면+문틀 세트) — 기사 1인, 반나절 내외 소요. 문틀은 모서리·몰딩이 많아 문짝보다 손이 많이 가는 부위라 함께 포함된 시공비입니다.",
   },
   jungmoon: {
-    materialUnitPrice: { basic: [8000, 12000], premium: [14000, 20000] },
+    materialUnitPrice: { basic: [8500, 12500], premium: [14000, 20000] },
     rollWidthM: ROLL_WIDTH_M,
     laborUnitPrice: [60000, 93000],
     laborNote: "중문 1조(프레임) — 기사 1인, 약 2~3시간 소요. 곡면·모서리 정밀 작업 포함",
@@ -362,7 +373,7 @@ const BUDGET = {
     laborNote: "천장 몰딩+걸레받이(24평형 전체) — 기사 1~2인, 약 1~1.5일 소요",
   },
   shoe: {
-    materialUnitPrice: { basic: [8000, 12000], premium: [14000, 20000] },
+    materialUnitPrice: { basic: [8500, 12500], premium: [14000, 20000] },
     rollWidthM: ROLL_WIDTH_M,
     laborUnitPrice: [33300, 55500],
     laborNote: "신발장(2m 내외) — 기사 1인, 약 2~3시간 소요 (최소 출장비 포함)",

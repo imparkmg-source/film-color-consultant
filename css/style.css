@@ -345,13 +345,14 @@ h1, h2, h3 {
 
 /* ---------- 3D mockup stage ---------- */
 .mockup3d-stage {
-  height: 260px;
+  height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
   perspective: 900px;
   background: radial-gradient(ellipse at 50% 100%, var(--stage-glow), transparent 70%);
   border-radius: 12px;
+  margin-bottom: 14px;
 }
 
 .mockup3d {
@@ -461,6 +462,7 @@ h1, h2, h3 {
   align-items: flex-end;
   gap: 2px;
   transform: scale(var(--corner-scale, 1)) rotateX(4deg);
+  transform-origin: center bottom;
   transform-style: preserve-3d;
 }
 .corner-wall {
@@ -726,6 +728,13 @@ h1, h2, h3 {
   margin-top: 20px;
 }
 .site-footer p { font-size: 12px; color: var(--ink-soft); margin: 0; }
+.site-footer .copyright {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
 
 /* Responsive */
 @media (max-width: 720px) {
