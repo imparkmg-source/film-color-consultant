@@ -307,6 +307,7 @@ function openDetail(catId, filmId) {
   // 예산 계산기 초기화
   $("#calc-size-label").textContent = `사이즈 (${cat.unit})`;
   $("#calc-size").value = cat.defaultSize;
+  $("#calc-fire").checked = false;
   $("#budget-detail").classList.add("hidden");
   $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", "false"));
   runCalc();
@@ -319,20 +320,43 @@ function formatWon(n) {
   return Math.round(n).toLocaleString("ko-KR") + "원";
 }
 
-function computeBudget(catId, texture, size) {
-  const tier = TIER_BY_TEXTURE[texture];
+function formatQty(n) {
+  return (Math.round(n * 100) / 100).toLocaleString("ko-KR");
+}
+
+function computeBudget(catId, texture, size, fireRetardant) {
+  const grade = GRADE_BY_TEXTURE[texture];
   const budget = BUDGET[catId];
-  const [matLow, matHigh] = budget.unitPrice[tier];
-  const [laborLow, laborHigh] = budget.labor;
-  const materialLow = size * matLow;
-  const materialHigh = size * matHigh;
+  const [priceLow, priceHigh] = budget.materialUnitPrice[grade];
+  const purchaseQty = size * (1 + WASTE_RATE); // 로스율 반영 구매 수량
+
+  const frMul = fireRetardant ? FIRE_RETARDANT_MULTIPLIER : [1, 1];
+  const filmLow = purchaseQty * priceLow * frMul[0];
+  const filmHigh = purchaseQty * priceHigh * frMul[1];
+
+  const ancillaryLow = filmLow * ANCILLARY_RATE;
+  const ancillaryHigh = filmHigh * ANCILLARY_RATE;
+
+  const materialLow = filmLow + ancillaryLow + DELIVERY_FEE;
+  const materialHigh = filmHigh + ancillaryHigh + DELIVERY_FEE;
+
+  const [laborUnitLow, laborUnitHigh] = budget.laborUnitPrice;
+  const laborLow = size * laborUnitLow;
+  const laborHigh = size * laborUnitHigh;
+
   return {
-    tier,
-    tierLabel: TIER_LABEL[tier],
+    grade,
+    gradeLabel: GRADE_LABEL[grade],
     size,
     unit: CATEGORIES.find((c) => c.id === catId).unit,
-    matLow, matHigh, laborLow, laborHigh,
+    priceLow, priceHigh,
+    purchaseQty,
+    fireRetardant: !!fireRetardant,
+    filmLow, filmHigh,
+    ancillaryLow, ancillaryHigh,
+    deliveryFee: DELIVERY_FEE,
     materialLow, materialHigh,
+    laborLow, laborHigh,
     totalLow: materialLow + laborLow,
     totalHigh: materialHigh + laborHigh,
     laborNote: budget.laborNote,
@@ -342,8 +366,9 @@ function computeBudget(catId, texture, size) {
 function runCalc() {
   const cat = CATEGORIES.find((c) => c.id === state.categoryId);
   const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
-  const size = Math.max(1, Number($("#calc-size").value) || 1);
-  const b = computeBudget(cat.id, film.texture, size);
+  const size = Math.max(0.5, Number($("#calc-size").value) || 0.5);
+  const fireRetardant = $("#calc-fire").checked;
+  const b = computeBudget(cat.id, film.texture, size, fireRetardant);
   state.lastBudget = b;
 
   $("#budget-material").textContent = `${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}`;
@@ -359,17 +384,21 @@ function renderBudgetDetail(key) {
   let html = "";
   if (key === "material") {
     html = `
-      <div class="formula">단가 ${formatWon(b.matLow)}~${formatWon(b.matHigh)} × ${b.size}${b.unit.replace(/\(.*\)/, "")} = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</div>
+      <div class="formula">(${b.size}${b.unit} × 로스율 12%) × 단가 + 부자재비 + 배송비 = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</div>
       <dl>
-        <dt>적용 등급</dt><dd>${b.tierLabel}</dd>
-        <dt>단가</dt><dd>${formatWon(b.matLow)} ~ ${formatWon(b.matHigh)} / ${b.unit}</dd>
-        <dt>필요 수량</dt><dd>${b.size} ${b.unit}</dd>
+        <dt>적용 등급</dt><dd>${b.gradeLabel}${b.fireRetardant ? " · 방염" : ""}</dd>
+        <dt>실측 면적</dt><dd>${b.size} ${b.unit}</dd>
+        <dt>구매 수량(로스율 12% 포함)</dt><dd>${formatQty(b.purchaseQty)} ${b.unit}</dd>
+        <dt>필름 단가</dt><dd>${formatWon(b.priceLow)} ~ ${formatWon(b.priceHigh)} / ${b.unit}${b.fireRetardant ? " (방염 할증 반영)" : ""}</dd>
+        <dt>필름 자재비</dt><dd>${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</dd>
+        <dt>부자재비 (프라이머 등, 자재비의 10%)</dt><dd>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}</dd>
+        <dt>배송비</dt><dd>${formatWon(b.deliveryFee)}</dd>
         <dt>자재비 소계</dt><dd>${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</dd>
       </dl>
     `;
   } else if (key === "labor") {
     html = `
-      <div class="formula">${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</div>
+      <div class="formula">${b.size}${b.unit} × 단가 = ${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</div>
       <dl>
         <dt>산정 기준</dt><dd>${b.laborNote}</dd>
         <dt>인건비 소계</dt><dd>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</dd>
@@ -377,9 +406,11 @@ function renderBudgetDetail(key) {
     `;
   } else {
     html = `
-      <div class="formula">자재비 + 인건비 = ${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</div>
+      <div class="formula">자재비(부자재·배송 포함) + 인건비 = ${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</div>
       <dl>
-        <dt>자재비</dt><dd>${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</dd>
+        <dt>필름 자재비</dt><dd>${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</dd>
+        <dt>부자재비</dt><dd>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}</dd>
+        <dt>배송비</dt><dd>${formatWon(b.deliveryFee)}</dd>
         <dt>인건비</dt><dd>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</dd>
         <dt>합계</dt><dd>${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</dd>
       </dl>
@@ -454,16 +485,25 @@ function buildEstimateDoc() {
       <h4>예상 견적</h4>
       <table>
         <tr><th>시공 부위</th><td>${cat.name}</td></tr>
-        <tr><th>선택 컬러</th><td>${film.name} (${film.code})</td></tr>
-        <tr><th>시공 사이즈</th><td>${b.size} ${b.unit}</td></tr>
-        <tr><th>자재비</th><td>단가 ${formatWon(b.matLow)}~${formatWon(b.matHigh)} × ${b.size} = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</td></tr>
+        <tr><th>선택 컬러</th><td>${film.name} (${film.code}) · ${b.gradeLabel}${b.fireRetardant ? " · 방염" : " · 비방염"}</td></tr>
+        <tr><th>실측 면적</th><td>${b.size} ${b.unit} (로스율 12% 반영 구매 수량 ${formatQty(b.purchaseQty)} ${b.unit})</td></tr>
+        <tr><th>필름 자재비</th><td>단가 ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.unit} × ${formatQty(b.purchaseQty)}${b.unit} = ${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</td></tr>
+        <tr><th>부자재비</th><td>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)} (프라이머·사포·마스킹테이프 등, 자재비의 10%)</td></tr>
+        <tr><th>배송비</th><td>${formatWon(b.deliveryFee)}</td></tr>
         <tr><th>인건비</th><td>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)} (${b.laborNote})</td></tr>
         <tr class="doc-total-row"><th>합계 (예상)</th><td>${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</td></tr>
       </table>
     </div>
 
+    <div class="doc-section">
+      <h4>브랜드별 필름 시세 참고</h4>
+      <table>
+        ${BRAND_GUIDE.map((brand) => `<tr><th>${brand.brand}</th><td>${brand.priceRange} · ${brand.note}</td></tr>`).join("")}
+      </table>
+    </div>
+
     <div class="doc-footer">
-      제품 이미지는 이보닥(ebodaq) 공식 사이트에서 불러온 참고용 이미지입니다. 본 견적서는 참고용 단가를 기반으로 산출한 예상 금액이며, 법적 효력이 있는 정식 견적서가 아닙니다. 실제 시공 견적은 현장 실측 후 확정되며, 모서리 수·기존 필름 제거 여부·층수 및 엘리베이터 유무 등에 따라 달라질 수 있습니다.
+      제품 이미지는 이보닥(ebodaq) 공식 사이트에서 불러온 참고용 이미지입니다. 본 견적서는 웹 조사를 기반으로 한 참고용 단가로 산출한 예상 금액이며, 법적 효력이 있는 정식 견적서가 아닙니다. 실제 시공 견적은 현장 실측·브랜드/제품 선택·지역·업체에 따라 달라질 수 있습니다. ${FIRE_RETARDANT_INFO.mandatoryText} ${FIRE_RETARDANT_INFO.residentialText}
     </div>
   `;
 }
@@ -556,10 +596,26 @@ document.addEventListener("keydown", (e) => {
 });
 
 $("#calc-size").addEventListener("input", runCalc);
+$("#calc-fire").addEventListener("change", runCalc);
 
 $$(".budget-card").forEach((card) => {
   card.addEventListener("click", () => toggleBudgetDetail(card.dataset.key));
 });
 
+// ---------- 참고 정보 (방염 안내 · 브랜드 가이드) ----------
+function renderStaticInfo() {
+  $("#fire-note").textContent = `※ ${FIRE_RETARDANT_INFO.mandatoryText} ${FIRE_RETARDANT_INFO.residentialText}`;
+  $("#brand-guide-body").innerHTML = BRAND_GUIDE.map(
+    (b) => `
+      <div class="brand-guide-item">
+        <span class="bg-name">${b.brand} <span class="muted">· ${b.tier}</span></span>
+        <span class="bg-price">${b.priceRange}</span>
+        <span class="bg-note">${b.note}</span>
+      </div>
+    `
+  ).join("");
+}
+
 // ---------- 초기화 ----------
 renderCategories();
+renderStaticInfo();

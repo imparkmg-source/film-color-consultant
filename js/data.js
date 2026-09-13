@@ -15,8 +15,8 @@ const CATEGORIES = [
     name: "붙박이장",
     icon: "🗄️",
     desc: "안방·옷방 붙박이장, 드레스룸 도어 필름",
-    unit: "자(30cm 폭)",
-    defaultSize: 10,
+    unit: "㎡",
+    defaultSize: 8,
     tint: { light: "#ECE6F7", dark: "#332C49" },
     mockup: { type: "cabinet", w: 166, h: 228, d: 44, doors: 2, handles: true },
   },
@@ -25,8 +25,8 @@ const CATEGORIES = [
     name: "싱크대·주방가구",
     icon: "🍽️",
     desc: "하부장·상부장 도어, 옆판 필름",
-    unit: "자(30cm 폭)",
-    defaultSize: 12,
+    unit: "㎡",
+    defaultSize: 11,
     tint: { light: "#DFF3EA", dark: "#1F3A30" },
     mockup: { type: "kitchen" },
   },
@@ -35,8 +35,8 @@ const CATEGORIES = [
     name: "방문",
     icon: "🚪",
     desc: "실내 방문 필름 리폼 (문틀 포함)",
-    unit: "자(30cm 폭)",
-    defaultSize: 3,
+    unit: "㎡",
+    defaultSize: 3.5,
     tint: { light: "#FCEBDD", dark: "#3E2E22" },
     mockup: { type: "cabinet", w: 120, h: 244, d: 18, doors: 1, handles: true, frame: true },
   },
@@ -45,8 +45,8 @@ const CATEGORIES = [
     name: "중문",
     icon: "🪟",
     desc: "현관 중문·거실 파티션 필름",
-    unit: "자(30cm 폭)",
-    defaultSize: 4,
+    unit: "㎡",
+    defaultSize: 3,
     tint: { light: "#E1EAF8", dark: "#233047" },
     mockup: { type: "glass", w: 166, h: 244, d: 21 },
   },
@@ -55,7 +55,7 @@ const CATEGORIES = [
     name: "몰딩·걸레받이",
     icon: "📏",
     desc: "천장 몰딩, 바닥 걸레받이 라인 필름",
-    unit: "미터(m)",
+    unit: "m",
     defaultSize: 80,
     tint: { light: "#FBF1D6", dark: "#3E351D" },
     mockup: { type: "corner" },
@@ -65,8 +65,8 @@ const CATEGORIES = [
     name: "신발장",
     icon: "👞",
     desc: "현관 신발장 도어 필름",
-    unit: "자(30cm 폭)",
-    defaultSize: 6,
+    unit: "㎡",
+    defaultSize: 4.5,
     tint: { light: "#FBE5EC", dark: "#3C2530" },
     mockup: { type: "cabinet", w: 195, h: 125, d: 44, doors: 3, handles: true },
   },
@@ -187,47 +187,117 @@ const CATEGORY_TIPS = {
   shoe: "신발장은 내부보다 도어 외부 위주로 시공해 비용을 절감할 수 있습니다.",
 };
 
-// 질감(texture) -> 자재비 단가 등급(tier) 매핑
-const TIER_BY_TEXTURE = {
+// ============================================================
+// 예상 견적 산출 기준 (웹 조사 기반, 2026년 9월 시세 참고)
+// 표준 필름 롤 규격: 1,220mm(폭) × 50m(길이) ≈ 61㎡/롤 — "자(30cm)" 단위가 아니라
+// 실측 면적(㎡)·길이(m) 기준으로 계산합니다.
+//
+// 참고한 자료:
+// - 숨고 인테리어필름 시공 견적 통계(건당 평균 58만원, 18만~270만원)
+//   https://soomgo.com/prices/인테리어-필름-시공
+// - 맘미estimate 부위별 견적표(문/신발장/붙박이장/싱크대/몰딩 등)
+//   https://mommyestimate.com/estimation/firm
+// - 시트메카 보닥 필름 소매가(단색 9,900원대, 프리미엄 우드·마블·메탈 13,000~16,500원대)
+//   https://sheetmeca.com/category/현대lc보닥-인테리어필름/48/
+// - LX하우시스 대리점 50m 롤 판매가(약 70만~100만원/롤 → 14,000~20,000원/m)
+//   https://ares5000.com/, LX 대리점 견적 사례
+// - 영림임업 필름 m당 단가 사례(약 5,800원/m)
+//   https://ares5000.com/product/영림-인테리어-필름-ps061-m당-5800원/2303/
+// - 방염/비방염 가격 차이(약 1.5~2배) 및 방염조치 대상(소방시설법 시행령)
+//   https://filumi.co.kr/post/308, https://easylaw.go.kr (다중이용업소·특정 근린생활시설·11층 이상 건축물, 공동주택 제외)
+// - 인건비 시세(1품/1인 1일 25~30만원) — 오늘의집/미소 등 시공 후기 종합
+//   https://ohou.se/advices/2259 , https://miso.kr/blog/인테리어-필름-시공-비용
+//
+// 실제 견적은 현장 실측, 브랜드·제품 선택, 지역, 업체에 따라 달라질 수 있습니다.
+// ============================================================
+
+// 질감(texture) -> 자재 등급(grade) 매핑. 본 사이트 제품은 모두 현대L&C 보닥 브랜드이며,
+// 무광 단색·콘크리트 라인은 BASIC, 우드그레인·마블·메탈 라인은 PREMIUM으로 구분합니다.
+const GRADE_BY_TEXTURE = {
   solid: "basic",
-  concrete: "mid",
-  wood: "mid",
+  concrete: "basic",
+  wood: "premium",
   metal: "premium",
   marble: "premium",
 };
+const GRADE_LABEL = {
+  basic: "보닥 단색·콘크리트 등급",
+  premium: "보닥 프리미엄(우드그레인·마블·메탈) 등급",
+};
 
-const TIER_LABEL = { basic: "무광 단색 등급", mid: "텍스처(콘크리트·우드) 등급", premium: "프리미엄(메탈·마블) 등급" };
+// 공통 산출 계수
+const WASTE_RATE = 0.12; // 로스율(재단 손실·패턴 매칭 여유분) 약 12%
+const ANCILLARY_RATE = 0.1; // 부자재비(프라이머, 퍼티, 사포, 마스킹테이프, 커터날 등) — 자재비의 약 10%
+const DELIVERY_FEE = 15000; // 소량 주문 시 배송비(50m 풀롤 대량 구매 시 무료인 경우도 있음)
+const FIRE_RETARDANT_MULTIPLIER = [1.5, 2.0]; // 방염 필름 선택 시 자재비 배수(비방염 대비 약 1.5~2배)
 
-// 카테고리별 예산 기준 (단위: 원). unitPrice는 CATEGORIES[].unit 1단위당 자재비.
+// 방염 관련 법령 안내 (소방시설 설치 및 관리에 관한 법률 시행령 제30조 등)
+const FIRE_RETARDANT_INFO = {
+  mandatoryText:
+    "다중이용업소 영업소, 일부 근린생활시설(의원·조산원·산후조리원·체력단련장·공연장·종교집회장 등), 11층 이상 건축물(아파트 등 공동주택 제외)은 방염 성능 필름 사용이 의무입니다.",
+  residentialText: "일반 아파트·주택 등 공동주택은 법적 의무 대상은 아니지만, 화재 안전을 위해 선택하실 수 있습니다.",
+};
+
+// 브랜드별 시세 참고 가이드 (제품 데이터는 보닥 기준이며, 아래는 비교를 위한 시장 시세 참고용입니다)
+const BRAND_GUIDE = [
+  {
+    brand: "현대L&C 보닥 (Bodaq)",
+    tier: "프리미엄",
+    priceRange: "9,000~18,000원/㎡",
+    note: "본 사이트 제품 데이터의 기준 브랜드. 우드그레인·마블·메탈 등 고급 질감 라인이 강점입니다.",
+  },
+  {
+    brand: "LX하우시스",
+    tier: "프리미엄",
+    priceRange: "11,500~16,500원/㎡",
+    note: "대형 브랜드로 대리점 유통망이 넓고 라인업이 다양합니다. (50m 롤 약 70만~100만원대 기준 환산)",
+  },
+  {
+    brand: "영림임업",
+    tier: "스탠다드·가성비",
+    priceRange: "4,000~7,500원/㎡",
+    note: "무늬목·솔리드 컬러 위주의 가성비 라인. 예산을 낮추고 싶을 때 대안으로 문의해볼 만합니다.",
+  },
+  {
+    brand: "예림임업",
+    tier: "다브랜드 유통",
+    priceRange: "제품별 상이",
+    note: "여러 브랜드 필름을 함께 취급하는 종합몰 성격이라 제품별 가격 편차가 큰 편입니다.",
+  },
+];
+
+// 카테고리별 예상 견적 산출 기준
+// materialUnitPrice: 등급별 ㎡(또는 m)당 자재 단가 [최소, 최대]
+// laborUnitPrice: ㎡(또는 m)당 인건비 단가 [최소, 최대] — 최소 출장 시공비 개념 포함
 const BUDGET = {
   wardrobe: {
-    unitPrice: { basic: [6000, 8000], mid: [7000, 9500], premium: [10000, 15000] },
-    labor: [300000, 450000],
-    laborNote: "붙박이장 1조 기준 (기사 1인 반나절~1일 작업)",
+    materialUnitPrice: { basic: [9000, 13000], premium: [13000, 18000] },
+    laborUnitPrice: [37500, 56250],
+    laborNote: "붙박이장(3~4칸 도어 기준) — 기사 1인, 반나절~1일(약 4~6시간) 소요",
   },
   sink: {
-    unitPrice: { basic: [6000, 8000], mid: [7500, 10000], premium: [11000, 16000] },
-    labor: [350000, 500000],
-    laborNote: "상부장+하부장 기준 (기사 1인 1일 작업)",
+    materialUnitPrice: { basic: [9000, 13000], premium: [13000, 18000] },
+    laborUnitPrice: [27300, 41000],
+    laborNote: "상부장+하부장 세트 — 기사 1인, 1일(약 6~8시간) 소요",
   },
   door: {
-    unitPrice: { basic: [6000, 8000], mid: [7000, 9500], premium: [10000, 14000] },
-    labor: [80000, 120000],
-    laborNote: "방문 1개 기준 (여러 개 동시 시공 시 할인 가능)",
+    materialUnitPrice: { basic: [9000, 13000], premium: [13000, 18000] },
+    laborUnitPrice: [71500, 91500],
+    laborNote: "방문 1개(양면+문틀) — 기사 1인, 약 1.5~2시간 소요 (최소 출장비 포함)",
   },
   jungmoon: {
-    unitPrice: { basic: [7000, 9000], mid: [8000, 10500], premium: [12000, 18000] },
-    labor: [150000, 250000],
-    laborNote: "중문 1조 기준",
+    materialUnitPrice: { basic: [9000, 13000], premium: [13000, 18000] },
+    laborUnitPrice: [60000, 93000],
+    laborNote: "중문 1조(프레임) — 기사 1인, 약 2~3시간 소요. 곡면·모서리 정밀 작업 포함",
   },
   molding: {
-    unitPrice: { basic: [3000, 4500], mid: [4000, 5500], premium: [5500, 8000] },
-    labor: [200000, 400000],
-    laborNote: "전용면적 24평형 몰딩+걸레받이 전체 기준",
+    materialUnitPrice: { basic: [2500, 4000], premium: [4000, 6500] },
+    laborUnitPrice: [4400, 7500],
+    laborNote: "천장 몰딩+걸레받이(24평형 전체) — 기사 1~2인, 약 1~1.5일 소요",
   },
   shoe: {
-    unitPrice: { basic: [6000, 8000], mid: [7000, 9500], premium: [10000, 14000] },
-    labor: [150000, 250000],
-    laborNote: "신발장 2m 내외 기준",
+    materialUnitPrice: { basic: [9000, 13000], premium: [13000, 18000] },
+    laborUnitPrice: [33300, 55500],
+    laborNote: "신발장(2m 내외) — 기사 1인, 약 2~3시간 소요 (최소 출장비 포함)",
   },
 };
