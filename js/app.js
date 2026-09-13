@@ -233,13 +233,13 @@ function cabinetHTML(cfg, frontBg, texture, extraFrontContent) {
     </div>
   `;
 }
-function kitchenHTML(frontBg, texture) {
-  const upper = cabinetHTML({ w: 140, h: 73, d: 34, doors: 2, handles: false }, frontBg, texture);
-  const lower = cabinetHTML({ w: 224, h: 120, d: 55, doors: 3, handles: true }, frontBg, texture);
+function kitchenHTML(frontBg, texture, cfg) {
+  const upper = cabinetHTML({ w: cfg.upperW, h: 73, d: 34, doors: cfg.upperDoors, handles: false }, frontBg, texture);
+  const lower = cabinetHTML({ w: cfg.lowerW, h: 120, d: 55, doors: cfg.lowerDoors, handles: true }, frontBg, texture);
   return `
     <div class="mockup-kitchen">
       <div class="upper">${upper}</div>
-      <div class="counter-line" style="--kw:224"></div>
+      <div class="counter-line" style="--kw:${cfg.lowerW}"></div>
       <div class="lower">${lower}</div>
     </div>
   `;
@@ -248,9 +248,10 @@ function glassHTML(cfg, frontBg, texture) {
   const glassOverlay = `<div class="glass-fill"></div><div class="glass-grid"></div>`;
   return cabinetHTML({ w: cfg.w, h: cfg.h, d: cfg.d, doors: 2, handles: false }, frontBg, texture, glassOverlay);
 }
-function cornerHTML(frontBg) {
+function cornerHTML(frontBg, scale) {
+  const style = scale && scale !== 1 ? ` style="--corner-scale:${scale}"` : "";
   return `
-    <div class="mockup-corner">
+    <div class="mockup-corner"${style}>
       <div class="corner-wall left">
         <div class="corner-strip molding-top" style="background:${frontBg}"></div>
         <div class="corner-strip baseboard-bottom" style="background:${frontBg}"></div>
@@ -262,14 +263,67 @@ function cornerHTML(frontBg) {
     </div>
   `;
 }
+
+// 여러 개(문짝/중문)를 나란히 배치해서 보여준다. 개수가 많을수록 각 목업을 살짝 축소해
+// 스테이지 폭을 벗어나지 않도록 한다.
+const REPLICATE_SCALE = { 1: 1, 2: 0.82, 3: 0.68, 4: 0.58 };
+function replicateHTML(count, overflow, buildItem) {
+  const scale = REPLICATE_SCALE[count] || 0.58;
+  let items = "";
+  for (let i = 0; i < count; i++) items += `<div class="mockup-multi-item">${buildItem(scale)}</div>`;
+  const more = overflow > 0 ? `<div class="mockup-more">+${overflow}개</div>` : "";
+  return `<div class="mockup-multi">${items}${more}</div>`;
+}
+function scaleDims(cfg, scale) {
+  return { ...cfg, w: Math.round(cfg.w * scale), h: Math.round(cfg.h * scale), d: Math.round(cfg.d * scale) };
+}
+function clampInt(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, Math.round(v)));
+}
+
+// 사이즈 선택(자/개수/평)에 맞춰 3D 시공 배치 시안의 폭·문짝 수·반복 개수를 조절한다.
+// 예: 싱크대 폭을 6자→15자로 바꾸면 하부장 도어 수와 캐비닛 폭이 함께 늘어난다.
+function scaledMockupConfig(catId) {
+  const cat = CATEGORIES.find((c) => c.id === catId);
+  const base = cat.mockup;
+  const raw = Number($("#calc-size").value) || cat.sizeInput.default;
+  switch (catId) {
+    case "wardrobe":
+      return { ...base, doors: clampInt(raw / 2.5, 1, 5), w: clampInt(raw * 17, 70, 230) };
+    case "shoe":
+      return { ...base, doors: clampInt(raw / 2.5, 1, 4), w: clampInt(raw * 20, 90, 230) };
+    case "sink":
+      return {
+        ...base,
+        lowerDoors: clampInt(raw / 3, 2, 6),
+        lowerW: clampInt(raw * 15, 120, 250),
+        upperDoors: clampInt(raw / 4, 1, 4),
+        upperW: clampInt(raw * 10, 80, 190),
+      };
+    case "door":
+      return { ...base, count: clampInt(raw, 1, 4), overflow: Math.max(0, Math.round(raw) - 4) };
+    case "jungmoon":
+      return { ...base, count: clampInt(raw, 1, 3) };
+    case "molding":
+      return { ...base, scale: raw <= 24 ? 1 : raw <= 44 ? 1.15 : 1.3 };
+    default:
+      return base;
+  }
+}
+
 function mockupHTML(catId, film) {
   const cat = CATEGORIES.find((c) => c.id === catId);
-  const cfg = cat.mockup;
+  const cfg = scaledMockupConfig(catId);
   const frontBg = filmBackground(film);
-  if (cfg.type === "kitchen") return kitchenHTML(frontBg, film.texture);
-  if (cfg.type === "glass") return glassHTML(cfg, frontBg, film.texture);
-  if (cfg.type === "corner") return cornerHTML(frontBg);
-  return cabinetHTML(cfg, frontBg, film.texture);
+  const texture = film.texture;
+
+  if (cfg.type === "kitchen") return kitchenHTML(frontBg, texture, cfg);
+  if (cfg.type === "corner") return cornerHTML(frontBg, cfg.scale);
+  if (cfg.type === "glass") return replicateHTML(cfg.count, 0, (scale) => glassHTML(scaleDims(cfg, scale), frontBg, texture));
+  if (cfg.type === "cabinet" && cat.sizeInput.mode === "count") {
+    return replicateHTML(cfg.count, cfg.overflow, (scale) => cabinetHTML(scaleDims(cfg, scale), frontBg, texture));
+  }
+  return cabinetHTML(cfg, frontBg, texture);
 }
 function buildMockup(catId, film) {
   $("#mockup-stage").innerHTML = mockupHTML(catId, film);
@@ -297,19 +351,18 @@ function openDetail(catId, filmId) {
   photoRef.href = ebodaqLink(film.code);
   photoRef.textContent = `이보닥에서 ${film.code} 실사 이미지 보기 ↗`;
 
-  buildMockup(catId, film);
+  // 예산 계산기 사이즈 선택지부터 채워야 3D 목업이 올바른 기본값으로 그려진다.
+  $("#calc-size-label").textContent = cat.sizeInput.label;
+  $("#calc-size").innerHTML = cat.sizeInput.options
+    .map((v) => `<option value="${v}"${v === cat.sizeInput.default ? " selected" : ""}>${v}${cat.sizeInput.unitLabel}</option>`)
+    .join("");
+  $("#calc-fire").checked = false;
 
   // 팁: 질감 공통 팁 + 부위별 팁
   const tipsEl = $("#detail-tips");
   const tips = [...TEXTURE_TIPS[film.texture], CATEGORY_TIPS[catId]];
   tipsEl.innerHTML = tips.map((t) => `<li>${t}</li>`).join("");
 
-  // 예산 계산기 초기화
-  $("#calc-size-label").textContent = cat.sizeInput.label;
-  $("#calc-size").innerHTML = cat.sizeInput.options
-    .map((v) => `<option value="${v}"${v === cat.sizeInput.default ? " selected" : ""}>${v}${cat.sizeInput.unitLabel}</option>`)
-    .join("");
-  $("#calc-fire").checked = false;
   $("#budget-detail").classList.add("hidden");
   $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", "false"));
   runCalc();
@@ -330,11 +383,17 @@ function computeBudget(catId, texture, size, fireRetardant) {
   const grade = GRADE_BY_TEXTURE[texture];
   const budget = BUDGET[catId];
   const [priceLow, priceHigh] = budget.materialUnitPrice[grade];
-  const purchaseQty = size * (1 + WASTE_RATE); // 로스율 반영 구매 수량
+
+  // 업계 관행: 필름은 폭 1,220mm 롤로 팔리므로 자재비는 "원/㎡"가 아니라 "원/m"(길이) 기준.
+  // rollWidthM이 있으면 실측 면적(㎡)을 그 폭으로 나눠 필요한 필름 "길이(m)"를 구하고,
+  // 없으면(=몰딩·걸레받이, 이미 폭이 좁은 별도 제품) 입력값을 그대로 길이로 취급합니다.
+  const rollWidth = budget.rollWidthM || 1;
+  const neededLength = size / rollWidth;
+  const purchaseLength = neededLength * (1 + WASTE_RATE); // 로스율 반영 구매 길이(m)
 
   const frMul = fireRetardant ? FIRE_RETARDANT_MULTIPLIER : [1, 1];
-  const filmLow = purchaseQty * priceLow * frMul[0];
-  const filmHigh = purchaseQty * priceHigh * frMul[1];
+  const filmLow = purchaseLength * priceLow * frMul[0];
+  const filmHigh = purchaseLength * priceHigh * frMul[1];
 
   const ancillaryLow = filmLow * ANCILLARY_RATE;
   const ancillaryHigh = filmHigh * ANCILLARY_RATE;
@@ -352,7 +411,11 @@ function computeBudget(catId, texture, size, fireRetardant) {
     size,
     unit: CATEGORIES.find((c) => c.id === catId).unit,
     priceLow, priceHigh,
-    purchaseQty,
+    materialUnit: "m",
+    rollWidth,
+    isRollConverted: rollWidth !== 1,
+    neededLength,
+    purchaseLength,
     fireRetardant: !!fireRetardant,
     filmLow, filmHigh,
     ancillaryLow, ancillaryHigh,
@@ -382,6 +445,9 @@ function runCalc() {
   $("#budget-labor").textContent = `${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}`;
   $("#budget-total").textContent = `${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}`;
 
+  // 사이즈 선택에 따라 3D 시공 배치 시안도 함께 갱신
+  buildMockup(cat.id, film);
+
   if (state.activeBudgetKey) renderBudgetDetail(state.activeBudgetKey);
 }
 
@@ -390,13 +456,17 @@ function renderBudgetDetail(key) {
   if (!b) return;
   let html = "";
   if (key === "material") {
+    const rollRow = b.isRollConverted
+      ? `<dt>필요 길이(폭 1,220mm 기준)</dt><dd>${b.size}${b.unit} ÷ ${b.rollWidth}m = ${formatQty(b.neededLength)}m</dd>`
+      : "";
     html = `
-      <div class="formula">(${b.size}${b.unit} × 로스율 12%) × 단가 + 부자재비 + 배송비 = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</div>
+      <div class="formula">필요 길이 × 로스율 12% × m당 단가 + 부자재비 + 배송비 = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</div>
       <dl>
         <dt>적용 등급</dt><dd>${b.gradeLabel}${b.fireRetardant ? " · 방염" : ""}</dd>
         <dt>${b.rawLabel}</dt><dd>${b.rawValue}${b.rawUnitLabel} (약 ${formatQty(b.size)}${b.unit})</dd>
-        <dt>구매 수량(로스율 12% 포함)</dt><dd>${formatQty(b.purchaseQty)} ${b.unit}</dd>
-        <dt>필름 단가</dt><dd>${formatWon(b.priceLow)} ~ ${formatWon(b.priceHigh)} / ${b.unit}${b.fireRetardant ? " (방염 할증 반영)" : ""}</dd>
+        ${rollRow}
+        <dt>구매 길이(로스율 12% 포함)</dt><dd>${formatQty(b.purchaseLength)} ${b.materialUnit}</dd>
+        <dt>필름 단가</dt><dd>${formatWon(b.priceLow)} ~ ${formatWon(b.priceHigh)} / ${b.materialUnit}${b.fireRetardant ? " (방염 할증 반영)" : ""}</dd>
         <dt>필름 자재비</dt><dd>${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</dd>
         <dt>부자재비 (프라이머 등, 자재비의 10%)</dt><dd>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}</dd>
         <dt>배송비</dt><dd>${formatWon(b.deliveryFee)}</dd>
@@ -493,8 +563,8 @@ function buildEstimateDoc() {
       <table>
         <tr><th>시공 부위</th><td>${cat.name}</td></tr>
         <tr><th>선택 컬러</th><td>${film.name} (${film.code}) · ${b.gradeLabel}${b.fireRetardant ? " · 방염" : " · 비방염"}</td></tr>
-        <tr><th>${b.rawLabel}</th><td>${b.rawValue}${b.rawUnitLabel} → 약 ${formatQty(b.size)}${b.unit} (로스율 12% 반영 구매 수량 ${formatQty(b.purchaseQty)} ${b.unit})</td></tr>
-        <tr><th>필름 자재비</th><td>단가 ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.unit} × ${formatQty(b.purchaseQty)}${b.unit} = ${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</td></tr>
+        <tr><th>${b.rawLabel}</th><td>${b.rawValue}${b.rawUnitLabel} → 약 ${formatQty(b.size)}${b.unit}${b.isRollConverted ? ` → 필름 길이 ${formatQty(b.neededLength)}m (폭 1,220mm 기준)` : ""}, 로스율 12% 반영 구매 길이 ${formatQty(b.purchaseLength)}${b.materialUnit}</td></tr>
+        <tr><th>필름 자재비</th><td>단가 ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.materialUnit} × ${formatQty(b.purchaseLength)}${b.materialUnit} = ${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</td></tr>
         <tr><th>부자재비</th><td>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)} (프라이머·사포·마스킹테이프 등, 자재비의 10%)</td></tr>
         <tr><th>배송비</th><td>${formatWon(b.deliveryFee)}</td></tr>
         <tr><th>인건비</th><td>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)} (${b.laborNote})</td></tr>

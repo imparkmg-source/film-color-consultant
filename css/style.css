@@ -431,12 +431,36 @@ h1, h2, h3 {
   background: var(--glass);
 }
 
+/* multiple items side by side (문/중문 개수만큼 반복) */
+.mockup-multi {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mockup-multi-item { flex: none; }
+.mockup-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: var(--badge-bg);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  align-self: center;
+}
+
 /* molding: room corner */
 .mockup-corner {
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  transform: rotateX(4deg);
+  transform: scale(var(--corner-scale, 1)) rotateX(4deg);
   transform-style: preserve-3d;
 }
 .corner-wall {
@@ -717,7 +741,7 @@ h1, h2, h3 {
   .tagline { font-size: 12px; }
   .mockup3d-stage { height: 210px; }
   .mockup3d { transform: scale(0.72) rotateX(-14deg) rotateY(-32deg); }
-  .mockup-corner { transform: scale(0.8); }
+  .mockup-corner { transform: scale(calc(var(--corner-scale, 1) * 0.8)) rotateX(4deg); }
   .preview-block-head { flex-wrap: wrap; }
 
   .estimate-toolbar { flex-wrap: wrap; }
