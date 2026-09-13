@@ -3,7 +3,10 @@
 // 가격은 지역/시공사/현장 상태에 따라 달라질 수 있는 참고용 추정치입니다.
 
 // 실사 이미지 참고용 외부 링크 (사용자가 직접 제공한 URL)
-const REFERENCE_SITE = { name: "이보닥(ebodaq) 필름 시뮬레이션", url: "https://www.ebodaq.com/Product/Simulation" };
+const REFERENCE_SITE = {
+  name: "이보닥(ebodaq) 필름 카탈로그",
+  url: "https://www.ebodaq.com/Product/Product/Detail?pattern=&gloss=&color=&listType=0&searchText=&sortOrder=2&currentPage=1&pageSize=10000&idProduct=1674",
+};
 
 const CATEGORIES = [
   {

@@ -190,16 +190,17 @@ function cornerHTML(frontBg) {
     </div>
   `;
 }
-function buildMockup(catId, film) {
+function mockupHTML(catId, film) {
   const cat = CATEGORIES.find((c) => c.id === catId);
   const cfg = cat.mockup;
   const frontBg = textureBackground(film.hex, film.texture);
-  let html;
-  if (cfg.type === "kitchen") html = kitchenHTML(frontBg, film.texture);
-  else if (cfg.type === "glass") html = glassHTML(cfg, frontBg, film.texture);
-  else if (cfg.type === "corner") html = cornerHTML(frontBg);
-  else html = cabinetHTML(cfg, frontBg, film.texture);
-  $("#mockup-stage").innerHTML = html;
+  if (cfg.type === "kitchen") return kitchenHTML(frontBg, film.texture);
+  if (cfg.type === "glass") return glassHTML(cfg, frontBg, film.texture);
+  if (cfg.type === "corner") return cornerHTML(frontBg);
+  return cabinetHTML(cfg, frontBg, film.texture);
+}
+function buildMockup(catId, film) {
+  $("#mockup-stage").innerHTML = mockupHTML(catId, film);
 }
 
 // ---------- 상세 모달 ----------
@@ -355,6 +356,76 @@ function closePhotoModal() {
   $("#photo-modal").classList.add("hidden");
 }
 
+// ---------- 예상 견적서 (A4 인쇄/PDF) ----------
+function buildEstimateDoc() {
+  const cat = CATEGORIES.find((c) => c.id === state.categoryId);
+  const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
+  const b = state.lastBudget;
+  const bg = textureBackground(film.hex, film.texture);
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+  const docNo = `EST-${film.code}-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+
+  const tips = [...TEXTURE_TIPS[film.texture], CATEGORY_TIPS[cat.id]];
+
+  $("#estimate-doc").innerHTML = `
+    <div class="doc-header">
+      <div>
+        <h2>인테리어필름 시공 예상 견적서</h2>
+        <div class="doc-brand">인테리어필름 컬러 상담소</div>
+      </div>
+      <div class="doc-meta">
+        발행일: ${dateStr}<br />
+        문서번호: ${docNo}
+      </div>
+    </div>
+
+    <div class="doc-section doc-product">
+      <div class="doc-swatch" style="background:${bg}"></div>
+      <div class="doc-product-info">
+        <div>${cat.name}</div>
+        <h3>${film.name}</h3>
+        <div>제품코드 <span class="doc-code">${film.code}</span> · ${TEXTURE_LABEL[film.texture]}</div>
+      </div>
+    </div>
+
+    <div class="doc-section">
+      <h4>3D 시공 배치 시안</h4>
+      <div class="doc-mockup-wrap">${mockupHTML(cat.id, film)}</div>
+    </div>
+
+    <div class="doc-section">
+      <h4>전문가 시공 Tip</h4>
+      <ul class="doc-tips">${tips.map((t) => `<li>${t}</li>`).join("")}</ul>
+    </div>
+
+    <div class="doc-section">
+      <h4>예상 견적</h4>
+      <table>
+        <tr><th>시공 부위</th><td>${cat.name}</td></tr>
+        <tr><th>선택 컬러</th><td>${film.name} (${film.code})</td></tr>
+        <tr><th>시공 사이즈</th><td>${b.size} ${b.unit}</td></tr>
+        <tr><th>자재비</th><td>단가 ${formatWon(b.matLow)}~${formatWon(b.matHigh)} × ${b.size} = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</td></tr>
+        <tr><th>인건비</th><td>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)} (${b.laborNote})</td></tr>
+        <tr class="doc-total-row"><th>합계 (예상)</th><td>${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</td></tr>
+      </table>
+    </div>
+
+    <div class="doc-footer">
+      본 견적서는 화면 표현용 시뮬레이션과 참고용 단가를 기반으로 산출한 예상 금액이며, 법적 효력이 있는 정식 견적서가 아닙니다. 실제 시공 견적은 현장 실측 후 확정되며, 모서리 수·기존 필름 제거 여부·층수 및 엘리베이터 유무 등에 따라 달라질 수 있습니다.
+    </div>
+  `;
+}
+
+function openEstimateModal() {
+  if (!state.lastBudget) runCalc();
+  buildEstimateDoc();
+  $("#estimate-modal").classList.remove("hidden");
+}
+function closeEstimateModal() {
+  $("#estimate-modal").classList.add("hidden");
+}
+
 // ---------- 이벤트 바인딩 ----------
 $("#btn-back-category").addEventListener("click", () => {
   $("#step-films").classList.add("hidden");
@@ -371,9 +442,18 @@ $("#btn-close-photo").addEventListener("click", closePhotoModal);
 $("#photo-modal").addEventListener("click", (e) => {
   if (e.target.id === "photo-modal") closePhotoModal();
 });
+
+$("#btn-estimate").addEventListener("click", openEstimateModal);
+$("#btn-close-estimate").addEventListener("click", closeEstimateModal);
+$("#btn-print-estimate").addEventListener("click", () => window.print());
+$("#estimate-modal").addEventListener("click", (e) => {
+  if (e.target.id === "estimate-modal") closeEstimateModal();
+});
+
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (!$("#photo-modal").classList.contains("hidden")) closePhotoModal();
+  else if (!$("#estimate-modal").classList.contains("hidden")) closeEstimateModal();
   else if (!$("#detail-modal").classList.contains("hidden")) closeDetail();
 });
 
