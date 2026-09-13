@@ -1,6 +1,6 @@
 // 인테리어필름 컬러 상담소 — 화면 로직
 
-const state = { categoryId: null, filmId: null };
+const state = { categoryId: null, filmId: null, activeBudgetKey: null, lastBudget: null };
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -31,48 +31,38 @@ function rgbaFromHex(hex, alpha) {
 function textureBackground(hex, texture) {
   switch (texture) {
     case "wood":
-      return {
-        background: `
-          repeating-linear-gradient(
-            92deg,
-            ${rgbaFromHex(shade(hex, -0.25), 0.55)} 0px,
-            ${rgbaFromHex(shade(hex, -0.25), 0.55)} 1px,
-            transparent 1px,
-            transparent 5px
-          ),
-          repeating-linear-gradient(
-            92deg,
-            ${rgbaFromHex(shade(hex, 0.2), 0.35)} 0px,
-            transparent 3px,
-            transparent 9px
-          ),
-          linear-gradient(100deg, ${shade(hex, 0.12)}, ${hex} 45%, ${shade(hex, -0.12)})
-        `,
-      };
+      return `
+        repeating-linear-gradient(
+          92deg,
+          ${rgbaFromHex(shade(hex, -0.25), 0.55)} 0px,
+          ${rgbaFromHex(shade(hex, -0.25), 0.55)} 1px,
+          transparent 1px,
+          transparent 5px
+        ),
+        repeating-linear-gradient(
+          92deg,
+          ${rgbaFromHex(shade(hex, 0.2), 0.35)} 0px,
+          transparent 3px,
+          transparent 9px
+        ),
+        linear-gradient(100deg, ${shade(hex, 0.12)}, ${hex} 45%, ${shade(hex, -0.12)})
+      `;
     case "gloss":
-      return {
-        background: `linear-gradient(135deg, ${shade(hex, 0.35)} 0%, ${hex} 40%, ${shade(hex, -0.08)} 100%)`,
-      };
+      return `linear-gradient(135deg, ${shade(hex, 0.35)} 0%, ${hex} 40%, ${shade(hex, -0.08)} 100%)`;
     case "metal":
-      return {
-        background: `
-          repeating-linear-gradient(100deg, ${rgbaFromHex(shade(hex, 0.4), 0.25)} 0px, transparent 2px, transparent 6px),
-          linear-gradient(120deg, ${shade(hex, 0.3)}, ${hex} 50%, ${shade(hex, -0.2)})
-        `,
-      };
+      return `
+        repeating-linear-gradient(100deg, ${rgbaFromHex(shade(hex, 0.4), 0.25)} 0px, transparent 2px, transparent 6px),
+        linear-gradient(120deg, ${shade(hex, 0.3)}, ${hex} 50%, ${shade(hex, -0.2)})
+      `;
     case "marble":
-      return {
-        background: `
-          radial-gradient(120% 40% at 15% 20%, ${rgbaFromHex(shade(hex, -0.4), 0.5)} 0%, transparent 45%),
-          radial-gradient(160% 50% at 80% 70%, ${rgbaFromHex(shade(hex, -0.3), 0.4)} 0%, transparent 50%),
-          radial-gradient(100% 30% at 50% 45%, ${rgbaFromHex(shade(hex, 0.3), 0.5)} 0%, transparent 60%),
-          linear-gradient(160deg, ${shade(hex, 0.1)}, ${hex})
-        `,
-      };
+      return `
+        radial-gradient(120% 40% at 15% 20%, ${rgbaFromHex(shade(hex, -0.4), 0.5)} 0%, transparent 45%),
+        radial-gradient(160% 50% at 80% 70%, ${rgbaFromHex(shade(hex, -0.3), 0.4)} 0%, transparent 50%),
+        radial-gradient(100% 30% at 50% 45%, ${rgbaFromHex(shade(hex, 0.3), 0.5)} 0%, transparent 60%),
+        linear-gradient(160deg, ${shade(hex, 0.1)}, ${hex})
+      `;
     default: // solid
-      return {
-        background: `linear-gradient(160deg, ${shade(hex, 0.08)}, ${hex} 60%, ${shade(hex, -0.05)})`,
-      };
+      return `linear-gradient(160deg, ${shade(hex, 0.08)}, ${hex} 60%, ${shade(hex, -0.05)})`;
   }
 }
 
@@ -91,6 +81,8 @@ function renderCategories() {
   CATEGORIES.forEach((cat) => {
     const card = document.createElement("button");
     card.className = "category-card";
+    card.style.setProperty("--tint-light", cat.tint.light);
+    card.style.setProperty("--tint-dark", cat.tint.dark);
     card.innerHTML = `
       <span class="category-icon">${cat.icon}</span>
       <h3>${cat.name}</h3>
@@ -120,9 +112,8 @@ function renderFilms(catId) {
   films.forEach((film, idx) => {
     const card = document.createElement("button");
     card.className = "film-card";
-    const swatchStyle = textureBackground(film.hex, film.texture);
     card.innerHTML = `
-      <div class="film-swatch ${film.texture === "gloss" ? "shine" : ""}" style="background:${swatchStyle.background}">
+      <div class="film-swatch ${film.texture === "gloss" ? "shine" : ""}" style="background:${textureBackground(film.hex, film.texture)}">
         <span class="film-rank">TOP ${idx + 1}</span>
         <span class="film-tag">${film.tag}</span>
       </div>
@@ -137,29 +128,99 @@ function renderFilms(catId) {
   });
 }
 
+// ---------- 3D 목업 빌더 ----------
+function doorLinesHTML(doors) {
+  let out = "";
+  for (let i = 1; i < doors; i++) {
+    out += `<div class="door-line" style="left:${((100 / doors) * i).toFixed(2)}%"></div>`;
+  }
+  return out;
+}
+function handlesHTML(doors) {
+  let out = "";
+  const doorWidthPct = 100 / doors;
+  for (let i = 0; i < doors; i++) {
+    const onRightEdge = i % 2 === 0;
+    const pos = onRightEdge ? doorWidthPct * i + doorWidthPct * 0.86 : doorWidthPct * i + doorWidthPct * 0.14;
+    out += `<div class="door-handle" style="left:${pos.toFixed(2)}%"></div>`;
+  }
+  return out;
+}
+function cabinetHTML(cfg, frontBg, texture, extraFrontContent) {
+  const { w, h, d, doors, handles } = cfg;
+  const shineCls = texture === "gloss" ? " shine" : "";
+  return `
+    <div class="mockup3d" style="--w:${w}px;--h:${h}px;--d:${d}px;">
+      <div class="face top" style="background:${frontBg}"></div>
+      <div class="face side" style="background:${frontBg}"></div>
+      <div class="face front${shineCls}" style="background:${frontBg}">
+        ${doors > 1 ? doorLinesHTML(doors) : ""}
+        ${handles ? handlesHTML(doors) : ""}
+        ${extraFrontContent || ""}
+      </div>
+    </div>
+  `;
+}
+function kitchenHTML(frontBg, texture) {
+  const upper = cabinetHTML({ w: 108, h: 56, d: 26, doors: 2, handles: false }, frontBg, texture);
+  const lower = cabinetHTML({ w: 172, h: 92, d: 42, doors: 3, handles: true }, frontBg, texture);
+  return `
+    <div class="mockup-kitchen">
+      <div class="upper">${upper}</div>
+      <div class="counter-line" style="--kw:172"></div>
+      <div class="lower">${lower}</div>
+    </div>
+  `;
+}
+function glassHTML(cfg, frontBg, texture) {
+  const glassOverlay = `<div class="glass-fill"></div><div class="glass-grid"></div>`;
+  return cabinetHTML({ w: cfg.w, h: cfg.h, d: cfg.d, doors: 2, handles: false }, frontBg, texture, glassOverlay);
+}
+function cornerHTML(frontBg) {
+  return `
+    <div class="mockup-corner">
+      <div class="corner-wall left">
+        <div class="corner-strip molding-top" style="background:${frontBg}"></div>
+        <div class="corner-strip baseboard-bottom" style="background:${frontBg}"></div>
+      </div>
+      <div class="corner-wall right">
+        <div class="corner-strip molding-top" style="background:${frontBg}"></div>
+        <div class="corner-strip baseboard-bottom" style="background:${frontBg}"></div>
+      </div>
+    </div>
+  `;
+}
+function buildMockup(catId, film) {
+  const cat = CATEGORIES.find((c) => c.id === catId);
+  const cfg = cat.mockup;
+  const frontBg = textureBackground(film.hex, film.texture);
+  let html;
+  if (cfg.type === "kitchen") html = kitchenHTML(frontBg, film.texture);
+  else if (cfg.type === "glass") html = glassHTML(cfg, frontBg, film.texture);
+  else if (cfg.type === "corner") html = cornerHTML(frontBg);
+  else html = cabinetHTML(cfg, frontBg, film.texture);
+  $("#mockup-stage").innerHTML = html;
+}
+
 // ---------- 상세 모달 ----------
 function openDetail(catId, filmId) {
   const cat = CATEGORIES.find((c) => c.id === catId);
   const film = FILMS[catId].find((f) => f.id === filmId);
+  state.categoryId = catId;
   state.filmId = filmId;
+  state.activeBudgetKey = null;
 
   $("#detail-tag").textContent = film.tag;
   $("#detail-name").textContent = `${cat.name} · ${film.name}`;
+  $("#detail-code").textContent = film.code;
   $("#detail-desc").textContent = film.desc;
 
-  const macroStyle = textureBackground(film.hex, film.texture);
+  const bg = textureBackground(film.hex, film.texture);
   const macro = $("#swatch-macro");
-  macro.style.background = macroStyle.background;
+  macro.style.background = bg;
   macro.className = "swatch-macro" + (film.texture === "gloss" ? " shine" : "");
 
-  // 3D mockup 색상 반영
-  const front = document.querySelector("#mockup3d .face.front");
-  const side = document.querySelector("#mockup3d .face.side");
-  const top = document.querySelector("#mockup3d .face.top");
-  const frontBg = textureBackground(film.hex, film.texture).background;
-  front.style.background = frontBg;
-  side.style.background = frontBg;
-  top.style.background = frontBg;
+  buildMockup(catId, film);
 
   // 팁: 질감 공통 팁 + 부위별 팁
   const tipsEl = $("#detail-tips");
@@ -169,8 +230,9 @@ function openDetail(catId, filmId) {
   // 예산 계산기 초기화
   $("#calc-size-label").textContent = `사이즈 (${cat.unit})`;
   $("#calc-size").value = cat.defaultSize;
-  $("#labor-note").textContent = `※ 인건비 기준: ${BUDGET[catId].laborNote}`;
-  runCalc(catId, film.texture);
+  $("#budget-detail").classList.add("hidden");
+  $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", "false"));
+  runCalc();
 
   $("#detail-modal").classList.remove("hidden");
   document.body.style.overflow = "hidden";
@@ -180,26 +242,117 @@ function formatWon(n) {
   return Math.round(n).toLocaleString("ko-KR") + "원";
 }
 
-function runCalc(catId, texture) {
-  const size = Math.max(1, Number($("#calc-size").value) || 1);
+function computeBudget(catId, texture, size) {
   const tier = TIER_BY_TEXTURE[texture];
   const budget = BUDGET[catId];
   const [matLow, matHigh] = budget.unitPrice[tier];
   const [laborLow, laborHigh] = budget.labor;
-
   const materialLow = size * matLow;
   const materialHigh = size * matHigh;
-  const totalLow = materialLow + laborLow;
-  const totalHigh = materialHigh + laborHigh;
+  return {
+    tier,
+    tierLabel: TIER_LABEL[tier],
+    size,
+    unit: CATEGORIES.find((c) => c.id === catId).unit,
+    matLow, matHigh, laborLow, laborHigh,
+    materialLow, materialHigh,
+    totalLow: materialLow + laborLow,
+    totalHigh: materialHigh + laborHigh,
+    laborNote: budget.laborNote,
+  };
+}
 
-  $("#budget-material").textContent = `${formatWon(materialLow)} ~ ${formatWon(materialHigh)}`;
-  $("#budget-labor").textContent = `${formatWon(laborLow)} ~ ${formatWon(laborHigh)}`;
-  $("#budget-total").textContent = `${formatWon(totalLow)} ~ ${formatWon(totalHigh)}`;
+function runCalc() {
+  const cat = CATEGORIES.find((c) => c.id === state.categoryId);
+  const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
+  const size = Math.max(1, Number($("#calc-size").value) || 1);
+  const b = computeBudget(cat.id, film.texture, size);
+  state.lastBudget = b;
+
+  $("#budget-material").textContent = `${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}`;
+  $("#budget-labor").textContent = `${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}`;
+  $("#budget-total").textContent = `${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}`;
+
+  if (state.activeBudgetKey) renderBudgetDetail(state.activeBudgetKey);
+}
+
+function renderBudgetDetail(key) {
+  const b = state.lastBudget;
+  if (!b) return;
+  let html = "";
+  if (key === "material") {
+    html = `
+      <div class="formula">단가 ${formatWon(b.matLow)}~${formatWon(b.matHigh)} × ${b.size}${b.unit.replace(/\(.*\)/, "")} = ${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</div>
+      <dl>
+        <dt>적용 등급</dt><dd>${b.tierLabel}</dd>
+        <dt>단가</dt><dd>${formatWon(b.matLow)} ~ ${formatWon(b.matHigh)} / ${b.unit}</dd>
+        <dt>필요 수량</dt><dd>${b.size} ${b.unit}</dd>
+        <dt>자재비 소계</dt><dd>${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</dd>
+      </dl>
+    `;
+  } else if (key === "labor") {
+    html = `
+      <div class="formula">${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</div>
+      <dl>
+        <dt>산정 기준</dt><dd>${b.laborNote}</dd>
+        <dt>인건비 소계</dt><dd>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</dd>
+      </dl>
+    `;
+  } else {
+    html = `
+      <div class="formula">자재비 + 인건비 = ${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</div>
+      <dl>
+        <dt>자재비</dt><dd>${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</dd>
+        <dt>인건비</dt><dd>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</dd>
+        <dt>합계</dt><dd>${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</dd>
+      </dl>
+    `;
+  }
+  const detail = $("#budget-detail");
+  detail.innerHTML = html;
+  detail.classList.remove("hidden");
+}
+
+function toggleBudgetDetail(key) {
+  if (state.activeBudgetKey === key) {
+    state.activeBudgetKey = null;
+    $("#budget-detail").classList.add("hidden");
+    $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", "false"));
+    return;
+  }
+  state.activeBudgetKey = key;
+  $$(".budget-card").forEach((c) => c.setAttribute("aria-expanded", String(c.dataset.key === key)));
+  renderBudgetDetail(key);
 }
 
 function closeDetail() {
   $("#detail-modal").classList.add("hidden");
   document.body.style.overflow = "";
+}
+
+// ---------- 실사 이미지 참고 모달 ----------
+function openPhotoModal() {
+  const cat = CATEGORIES.find((c) => c.id === state.categoryId);
+  const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
+
+  const bg = textureBackground(film.hex, film.texture);
+  const hero = $("#photo-hero");
+  hero.style.background = bg;
+  hero.className = "photo-hero" + (film.texture === "gloss" ? " shine" : "");
+
+  $("#photo-tag").textContent = `${cat.name} · ${TEXTURE_LABEL[film.texture]}`;
+  $("#photo-name").textContent = film.name;
+  $("#photo-code").textContent = film.code;
+  $("#photo-desc").textContent = film.desc;
+
+  const link = $("#photo-ref-link");
+  link.href = REFERENCE_SITE.url;
+  link.textContent = `${REFERENCE_SITE.name}에서 실사 이미지 보기 ↗`;
+
+  $("#photo-modal").classList.remove("hidden");
+}
+function closePhotoModal() {
+  $("#photo-modal").classList.add("hidden");
 }
 
 // ---------- 이벤트 바인딩 ----------
@@ -213,16 +366,21 @@ $("#btn-close-modal").addEventListener("click", closeDetail);
 $("#detail-modal").addEventListener("click", (e) => {
   if (e.target.id === "detail-modal") closeDetail();
 });
+$("#btn-photo-ref").addEventListener("click", openPhotoModal);
+$("#btn-close-photo").addEventListener("click", closePhotoModal);
+$("#photo-modal").addEventListener("click", (e) => {
+  if (e.target.id === "photo-modal") closePhotoModal();
+});
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeDetail();
+  if (e.key !== "Escape") return;
+  if (!$("#photo-modal").classList.contains("hidden")) closePhotoModal();
+  else if (!$("#detail-modal").classList.contains("hidden")) closeDetail();
 });
 
-$("#calc-run").addEventListener("click", () => {
-  const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
-  runCalc(state.categoryId, film.texture);
-});
-$("#calc-size").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") $("#calc-run").click();
+$("#calc-size").addEventListener("input", runCalc);
+
+$$(".budget-card").forEach((card) => {
+  card.addEventListener("click", () => toggleBudgetDetail(card.dataset.key));
 });
 
 // ---------- 초기화 ----------
