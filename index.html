@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>인테리어필름 컬러 상담소</title>
+<meta name="description" content="붙박이장, 싱크대, 방문, 중문, 몰딩, 신발장 인테리어필름 컬러를 쉽게 고를 수 있도록 20년 경력 시공 전문가가 추천하는 스테디셀러 TOP10, 3D 미리보기, 시공 팁, 예상 견적을 제공합니다." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand">
+      <span class="brand-mark">🎨</span>
+      <div>
+        <h1>인테리어필름 컬러 상담소</h1>
+        <p class="tagline">20년 시공 전문가가 정리한 &ldquo;요즘 가장 많이 선택하는&rdquo; 컬러 가이드</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- STEP 1: 시공부위 선택 -->
+  <section id="step-category" class="step">
+    <div class="step-head">
+      <span class="step-badge">STEP 1</span>
+      <h2>어디에 필름을 시공하시나요?</h2>
+      <p class="muted">부위를 선택하면 요즘 고객들이 가장 많이 선택하는 스테디셀러 컬러 10가지를 보여드립니다.</p>
+    </div>
+    <div id="category-grid" class="category-grid"></div>
+  </section>
+
+  <!-- STEP 2: 컬러 선택 -->
+  <section id="step-films" class="step hidden">
+    <div class="step-head">
+      <button id="btn-back-category" class="btn-link">&larr; 시공부위 다시 선택</button>
+      <span class="step-badge">STEP 2</span>
+      <h2 id="films-title">스테디셀러 TOP 10</h2>
+      <p class="muted" id="films-desc"></p>
+    </div>
+    <div id="film-grid" class="film-grid"></div>
+  </section>
+
+</main>
+
+<!-- 상세 모달 -->
+<div id="detail-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <button id="btn-close-modal" class="modal-close" aria-label="닫기">&times;</button>
+
+    <div class="modal-body">
+      <div class="modal-left">
+        <div class="preview-tag" id="detail-tag"></div>
+        <h3 id="detail-name"></h3>
+        <p class="muted" id="detail-desc"></p>
+
+        <div class="preview-block">
+          <h4>질감 확대 미리보기</h4>
+          <div id="swatch-macro" class="swatch-macro"></div>
+          <p class="small-note">※ 실제 필름 질감 시뮬레이션 이미지입니다. 화면·조명에 따라 실물과 색상 차이가 있을 수 있어, 최종 결정 전 반드시 실물 샘플북으로 색상을 확인하시길 권장합니다.</p>
+        </div>
+
+        <div class="preview-block">
+          <h4>3D 시공 배치 시안</h4>
+          <div class="mockup3d-stage">
+            <div id="mockup3d" class="mockup3d">
+              <div class="face top"></div>
+              <div class="face side"></div>
+              <div class="face front">
+                <div class="panel-line"></div>
+                <div class="panel-line"></div>
+              </div>
+            </div>
+          </div>
+          <p class="small-note">※ 실제 공간 비율과 다를 수 있는 각도별 배치 참고용 3D 시안입니다.</p>
+        </div>
+      </div>
+
+      <div class="modal-right">
+        <div class="block">
+          <h4>💡 전문가 시공 Tip</h4>
+          <ul id="detail-tips" class="tip-list"></ul>
+        </div>
+
+        <div class="block">
+          <h4>💰 예상 견적 계산기</h4>
+          <div class="calc-row">
+            <label for="calc-size" id="calc-size-label">사이즈</label>
+            <input type="number" id="calc-size" min="1" step="1" />
+            <button id="calc-run" class="btn-primary btn-sm">다시 계산</button>
+          </div>
+          <div class="budget-grid">
+            <div class="budget-card">
+              <span class="budget-label">자재비</span>
+              <span class="budget-value" id="budget-material">-</span>
+            </div>
+            <div class="budget-card">
+              <span class="budget-label">인건비</span>
+              <span class="budget-value" id="budget-labor">-</span>
+            </div>
+            <div class="budget-card budget-total">
+              <span class="budget-label">합계 (예상)</span>
+              <span class="budget-value" id="budget-total">-</span>
+            </div>
+          </div>
+          <p class="small-note" id="labor-note"></p>
+          <p class="small-note">※ 실측 전 참고용 예상 견적이며, 현장 상태(모서리 수, 기존 필름 제거 여부, 층수·엘리베이터 유무 등)에 따라 실제 견적은 달라질 수 있습니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>본 사이트의 색상·질감은 화면 표현을 위한 시뮬레이션이며, 실제 필름 실물과 미세한 차이가 있을 수 있습니다. 최종 컬러는 반드시 실물 샘플북으로 확인 후 결정하시길 권장드립니다.</p>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
