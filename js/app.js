@@ -26,6 +26,15 @@ function rgbaFromHex(hex, alpha) {
   const { r, g, b } = hexToRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+// shade()가 만든 밝기 보정 색을 그대로 알파값과 함께 rgba()로 만든다.
+// (rgbaFromHex(shade(...)) 처럼 shade()의 "rgb(...)" 출력을 다시 hex 파서에 넣으면 NaN이 나므로 금지)
+function shadeRgba(hex, percent, alpha) {
+  const { r, g, b } = hexToRgb(hex);
+  const t = percent < 0 ? 0 : 255;
+  const p = Math.abs(percent);
+  const mix = (c) => Math.round(c + (t - c) * p);
+  return `rgba(${mix(r)}, ${mix(g)}, ${mix(b)}, ${alpha})`;
+}
 
 // 질감별 배경 스타일 생성 (실사 대체 시뮬레이션)
 function textureBackground(hex, texture) {
@@ -34,14 +43,14 @@ function textureBackground(hex, texture) {
       return `
         repeating-linear-gradient(
           92deg,
-          ${rgbaFromHex(shade(hex, -0.25), 0.55)} 0px,
-          ${rgbaFromHex(shade(hex, -0.25), 0.55)} 1px,
+          ${shadeRgba(hex, -0.25, 0.55)} 0px,
+          ${shadeRgba(hex, -0.25, 0.55)} 1px,
           transparent 1px,
           transparent 5px
         ),
         repeating-linear-gradient(
           92deg,
-          ${rgbaFromHex(shade(hex, 0.2), 0.35)} 0px,
+          ${shadeRgba(hex, 0.2, 0.35)} 0px,
           transparent 3px,
           transparent 9px
         ),
@@ -51,24 +60,24 @@ function textureBackground(hex, texture) {
       return `linear-gradient(135deg, ${shade(hex, 0.35)} 0%, ${hex} 40%, ${shade(hex, -0.08)} 100%)`;
     case "concrete":
       return `
-        radial-gradient(3px 3px at 15% 25%, ${rgbaFromHex(shade(hex, -0.3), 0.45)} 0%, transparent 60%),
-        radial-gradient(2px 2px at 65% 15%, ${rgbaFromHex(shade(hex, -0.25), 0.4)} 0%, transparent 60%),
-        radial-gradient(4px 4px at 40% 55%, ${rgbaFromHex(shade(hex, -0.2), 0.35)} 0%, transparent 60%),
-        radial-gradient(3px 3px at 80% 65%, ${rgbaFromHex(shade(hex, 0.25), 0.4)} 0%, transparent 60%),
-        radial-gradient(2px 2px at 25% 80%, ${rgbaFromHex(shade(hex, -0.28), 0.35)} 0%, transparent 60%),
-        radial-gradient(3px 3px at 90% 40%, ${rgbaFromHex(shade(hex, 0.2), 0.3)} 0%, transparent 60%),
+        radial-gradient(3px 3px at 15% 25%, ${shadeRgba(hex, -0.3, 0.45)} 0%, transparent 60%),
+        radial-gradient(2px 2px at 65% 15%, ${shadeRgba(hex, -0.25, 0.4)} 0%, transparent 60%),
+        radial-gradient(4px 4px at 40% 55%, ${shadeRgba(hex, -0.2, 0.35)} 0%, transparent 60%),
+        radial-gradient(3px 3px at 80% 65%, ${shadeRgba(hex, 0.25, 0.4)} 0%, transparent 60%),
+        radial-gradient(2px 2px at 25% 80%, ${shadeRgba(hex, -0.28, 0.35)} 0%, transparent 60%),
+        radial-gradient(3px 3px at 90% 40%, ${shadeRgba(hex, 0.2, 0.3)} 0%, transparent 60%),
         linear-gradient(155deg, ${shade(hex, 0.06)}, ${hex} 55%, ${shade(hex, -0.06)})
       `;
     case "metal":
       return `
-        repeating-linear-gradient(100deg, ${rgbaFromHex(shade(hex, 0.4), 0.25)} 0px, transparent 2px, transparent 6px),
+        repeating-linear-gradient(100deg, ${shadeRgba(hex, 0.4, 0.25)} 0px, transparent 2px, transparent 6px),
         linear-gradient(120deg, ${shade(hex, 0.3)}, ${hex} 50%, ${shade(hex, -0.2)})
       `;
     case "marble":
       return `
-        radial-gradient(120% 40% at 15% 20%, ${rgbaFromHex(shade(hex, -0.4), 0.5)} 0%, transparent 45%),
-        radial-gradient(160% 50% at 80% 70%, ${rgbaFromHex(shade(hex, -0.3), 0.4)} 0%, transparent 50%),
-        radial-gradient(100% 30% at 50% 45%, ${rgbaFromHex(shade(hex, 0.3), 0.5)} 0%, transparent 60%),
+        radial-gradient(120% 40% at 15% 20%, ${shadeRgba(hex, -0.4, 0.5)} 0%, transparent 45%),
+        radial-gradient(160% 50% at 80% 70%, ${shadeRgba(hex, -0.3, 0.4)} 0%, transparent 50%),
+        radial-gradient(100% 30% at 50% 45%, ${shadeRgba(hex, 0.3, 0.5)} 0%, transparent 60%),
         linear-gradient(160deg, ${shade(hex, 0.1)}, ${hex})
       `;
     default: // solid
