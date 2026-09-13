@@ -76,6 +76,19 @@ function textureBackground(hex, texture) {
   }
 }
 
+// ---------- 실사 이미지 (이보닥 공식 사이트에서 실시간으로 불러옴, 저장소에는 저장하지 않음) ----------
+function filmImageUrl(code, size) {
+  const folder = size === "preview" ? "Preview" : "List";
+  return `https://www.ebodaq.com/Upload/Product/${folder}/${encodeURIComponent(code)}.jpg`;
+}
+// 실사 이미지를 맨 위 레이어로, 질감 시뮬레이션을 그 아래 폴백 레이어로 쌓는다.
+// 이미지 로드에 실패하면(네트워크 차단 등) 해당 레이어가 투명해져 아래 시뮬레이션이 그대로 보인다.
+function filmBackground(film, size) {
+  const photo = `url('${filmImageUrl(film.code, size)}') center / cover no-repeat`;
+  const sim = textureBackground(film.hex, film.texture);
+  return `${photo}, ${sim}`;
+}
+
 const TEXTURE_LABEL = {
   solid: "무광 단색",
   concrete: "콘크리트 질감",
@@ -83,6 +96,43 @@ const TEXTURE_LABEL = {
   gloss: "하이그로시",
   metal: "메탈릭",
   marble: "마블·스톤",
+};
+
+// ---------- 카테고리 아이콘 (커스텀 라인 SVG) ----------
+const CATEGORY_ICONS = {
+  wardrobe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="3" width="16" height="18" rx="1.5"/>
+    <line x1="12" y1="3" x2="12" y2="21"/>
+    <circle cx="9.7" cy="12" r="0.65" fill="currentColor" stroke="none"/>
+    <circle cx="14.3" cy="12" r="0.65" fill="currentColor" stroke="none"/>
+  </svg>`,
+  sink: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8.5 4v2.5"/>
+    <path d="M8.5 4h3.5a2 2 0 012 2v1.2"/>
+    <rect x="3" y="11.5" width="18" height="8.5" rx="1.5"/>
+    <path d="M3 15h18"/>
+  </svg>`,
+  door: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="6" y="2.5" width="12" height="19" rx="1"/>
+    <circle cx="14.4" cy="12" r="0.75" fill="currentColor" stroke="none"/>
+  </svg>`,
+  jungmoon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="3" width="16" height="18" rx="1"/>
+    <line x1="12" y1="3" x2="12" y2="21"/>
+    <line x1="4" y1="9" x2="20" y2="9"/>
+    <line x1="4" y1="15" x2="20" y2="15"/>
+  </svg>`,
+  molding: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4.5 4v16h16"/>
+    <path d="M4.5 8h11"/>
+    <path d="M4.5 16.5h16"/>
+  </svg>`,
+  shoe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2.5" y="7.5" width="19" height="10" rx="1.5"/>
+    <line x1="9.5" y1="7.5" x2="9.5" y2="17.5"/>
+    <line x1="14.5" y1="7.5" x2="14.5" y2="17.5"/>
+    <line x1="2" y1="20.5" x2="22" y2="20.5"/>
+  </svg>`,
 };
 
 // ---------- 렌더링: STEP 1 카테고리 ----------
@@ -94,8 +144,10 @@ function renderCategories() {
     card.className = "category-card";
     card.style.setProperty("--tint-light", cat.tint.light);
     card.style.setProperty("--tint-dark", cat.tint.dark);
+    card.style.setProperty("--icon-light", shade(cat.tint.light, -0.62));
+    card.style.setProperty("--icon-dark", shade(cat.tint.dark, 0.55));
     card.innerHTML = `
-      <span class="category-icon">${cat.icon}</span>
+      <span class="category-icon">${CATEGORY_ICONS[cat.id]}</span>
       <h3>${cat.name}</h3>
       <p>${cat.desc}</p>
     `;
@@ -124,7 +176,7 @@ function renderFilms(catId) {
     const card = document.createElement("button");
     card.className = "film-card";
     card.innerHTML = `
-      <div class="film-swatch ${film.texture === "gloss" ? "shine" : ""}" style="background:${textureBackground(film.hex, film.texture)}">
+      <div class="film-swatch ${film.texture === "gloss" ? "shine" : ""}" style="background:${filmBackground(film)}">
         <span class="film-rank">TOP ${idx + 1}</span>
         <span class="film-tag">${film.tag}</span>
       </div>
@@ -204,7 +256,7 @@ function cornerHTML(frontBg) {
 function mockupHTML(catId, film) {
   const cat = CATEGORIES.find((c) => c.id === catId);
   const cfg = cat.mockup;
-  const frontBg = textureBackground(film.hex, film.texture);
+  const frontBg = filmBackground(film);
   if (cfg.type === "kitchen") return kitchenHTML(frontBg, film.texture);
   if (cfg.type === "glass") return glassHTML(cfg, frontBg, film.texture);
   if (cfg.type === "corner") return cornerHTML(frontBg);
@@ -227,7 +279,7 @@ function openDetail(catId, filmId) {
   $("#detail-code").textContent = film.code;
   $("#detail-desc").textContent = film.desc;
 
-  const bg = textureBackground(film.hex, film.texture);
+  const bg = filmBackground(film);
   const macro = $("#swatch-macro");
   macro.style.background = bg;
   macro.className = "swatch-macro" + (film.texture === "gloss" ? " shine" : "");
@@ -347,7 +399,7 @@ function openPhotoModal() {
   const cat = CATEGORIES.find((c) => c.id === state.categoryId);
   const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
 
-  const bg = textureBackground(film.hex, film.texture);
+  const bg = filmBackground(film, "preview");
   const hero = $("#photo-hero");
   hero.style.background = bg;
   hero.className = "photo-hero" + (film.texture === "gloss" ? " shine" : "");
@@ -372,7 +424,7 @@ function buildEstimateDoc() {
   const cat = CATEGORIES.find((c) => c.id === state.categoryId);
   const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
   const b = state.lastBudget;
-  const bg = textureBackground(film.hex, film.texture);
+  const bg = filmBackground(film, "preview");
   const today = new Date();
   const dateStr = today.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
   const docNo = `EST-${film.code}-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
@@ -423,7 +475,7 @@ function buildEstimateDoc() {
     </div>
 
     <div class="doc-footer">
-      본 견적서는 화면 표현용 시뮬레이션과 참고용 단가를 기반으로 산출한 예상 금액이며, 법적 효력이 있는 정식 견적서가 아닙니다. 실제 시공 견적은 현장 실측 후 확정되며, 모서리 수·기존 필름 제거 여부·층수 및 엘리베이터 유무 등에 따라 달라질 수 있습니다.
+      제품 이미지는 이보닥(ebodaq) 공식 사이트에서 불러온 참고용 이미지입니다. 본 견적서는 참고용 단가를 기반으로 산출한 예상 금액이며, 법적 효력이 있는 정식 견적서가 아닙니다. 실제 시공 견적은 현장 실측 후 확정되며, 모서리 수·기존 필름 제거 여부·층수 및 엘리베이터 유무 등에 따라 달라질 수 있습니다.
     </div>
   `;
 }
@@ -435,6 +487,59 @@ function openEstimateModal() {
 }
 function closeEstimateModal() {
   $("#estimate-modal").classList.add("hidden");
+}
+
+// 새 탭에 견적서만 담아 인쇄한다. (모달을 그대로 인쇄하면 미리보기 iframe 등 일부 환경에서
+// window.print()가 조용히 막히는 경우가 있어, 별도 창을 열어 그 창에서 인쇄를 트리거한다.)
+async function printEstimate() {
+  const cssLink = document.querySelector('link[rel="stylesheet"][href$="style.css"]');
+  let cssText = "";
+  try {
+    cssText = await fetch(cssLink.href).then((r) => r.text());
+  } catch (e) {
+    /* 스타일을 못 불러와도 문서 자체는 인쇄 가능하도록 계속 진행 */
+  }
+
+  const printWin = window.open("", "_blank");
+  if (!printWin) {
+    alert("팝업이 차단되어 인쇄 창을 열 수 없습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해주세요.");
+    return;
+  }
+
+  printWin.document.write(`<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>인테리어필름 시공 예상 견적서</title>
+<style>${cssText}</style>
+<style>
+  html, body { background: #d9d5e3; margin: 0; padding: 24px 16px; }
+  .estimate-doc { margin: 0 auto; }
+  .print-bar { max-width: 210mm; margin: 0 auto 12px; display: flex; justify-content: flex-end; }
+  .print-bar button {
+    background: #6c63a6; color: #fff; border: none; border-radius: 8px;
+    padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  @media print {
+    html, body { background: #fff; padding: 0; }
+    .print-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="print-bar"><button onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button></div>
+${$("#estimate-doc").outerHTML}
+</body>
+</html>`);
+  printWin.document.close();
+  printWin.focus();
+  setTimeout(() => {
+    try {
+      printWin.print();
+    } catch (e) {
+      /* 자동 인쇄가 막히면 사용자가 새 탭의 인쇄 버튼을 직접 눌러도 된다 */
+    }
+  }, 350);
 }
 
 // ---------- 이벤트 바인딩 ----------
@@ -456,7 +561,7 @@ $("#photo-modal").addEventListener("click", (e) => {
 
 $("#btn-estimate").addEventListener("click", openEstimateModal);
 $("#btn-close-estimate").addEventListener("click", closeEstimateModal);
-$("#btn-print-estimate").addEventListener("click", () => window.print());
+$("#btn-print-estimate").addEventListener("click", printEstimate);
 $("#estimate-modal").addEventListener("click", (e) => {
   if (e.target.id === "estimate-modal") closeEstimateModal();
 });

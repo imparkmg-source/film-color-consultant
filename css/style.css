@@ -147,21 +147,31 @@ h1, h2, h3 {
 }
 :root[data-theme="dark"] .category-card { background: var(--tint-dark); }
 .category-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow);
   border-color: var(--accent);
 }
+.category-card:hover .category-icon {
+  transform: scale(1.06);
+}
 .category-icon {
-  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
   background: var(--bg-card);
-  margin-bottom: 12px;
+  box-shadow: 0 3px 10px rgba(38, 42, 36, 0.10);
+  margin-bottom: 14px;
+  color: var(--icon-light);
+  transition: transform 0.15s ease;
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .category-icon { color: var(--icon-dark); }
+}
+:root[data-theme="dark"] .category-icon { color: var(--icon-dark); }
+.category-icon svg { width: 22px; height: 22px; }
 .category-card h3 { margin: 0 0 4px; font-size: 16.5px; color: var(--ink); }
 .category-card p { margin: 0; font-size: 13px; color: var(--ink-soft); }
 
