@@ -425,6 +425,16 @@ function computeBudget(catId, texture, size, fireRetardant) {
   };
 }
 
+// 자재비·인건비 비중(중간값 기준, 합이 정확히 100%가 되도록 보정)
+function budgetRatio(b) {
+  const materialMid = (b.materialLow + b.materialHigh) / 2;
+  const laborMid = (b.laborLow + b.laborHigh) / 2;
+  const total = materialMid + laborMid;
+  const pctMaterial = total > 0 ? Math.round((materialMid / total) * 100) : 50;
+  const pctLabor = 100 - pctMaterial;
+  return { pctMaterial, pctLabor };
+}
+
 function runCalc() {
   const cat = CATEGORIES.find((c) => c.id === state.categoryId);
   const film = FILMS[state.categoryId].find((f) => f.id === state.filmId);
@@ -463,6 +473,12 @@ function renderReceipt(b) {
   $("#r-labor-note").textContent = b.laborNote;
 
   $("#r-total").textContent = `${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}`;
+
+  const ratio = budgetRatio(b);
+  $("#ratio-material-seg").style.width = `${ratio.pctMaterial}%`;
+  $("#ratio-labor-seg").style.width = `${ratio.pctLabor}%`;
+  $("#ratio-material-pct").textContent = `${ratio.pctMaterial}%`;
+  $("#ratio-labor-pct").textContent = `${ratio.pctLabor}%`;
 }
 
 function closeDetail() {
@@ -481,6 +497,7 @@ function buildEstimateDoc() {
   const docNo = `EST-${film.code}-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
 
   const tips = [...TEXTURE_TIPS[film.texture], CATEGORY_TIPS[cat.id]];
+  const docRatio = budgetRatio(b);
 
   $("#estimate-doc").innerHTML = `
     <div class="doc-header">
@@ -519,12 +536,36 @@ function buildEstimateDoc() {
         <tr><th>시공 부위</th><td>${cat.name}</td></tr>
         <tr><th>선택 컬러</th><td>${film.name} (${film.code}) · ${b.gradeLabel}${b.fireRetardant ? " · 방염" : " · 비방염"}</td></tr>
         <tr><th>${b.rawLabel}</th><td>${b.rawValue}${b.rawUnitLabel} → 약 ${formatQty(b.size)}${b.unit}${b.isRollConverted ? ` → 필름 길이 ${formatQty(b.neededLength)}m (폭 1,220mm 기준)` : ""}, 로스율 12% 반영 구매 길이 ${formatQty(b.purchaseLength)}${b.materialUnit}</td></tr>
-        <tr><th>필름 자재비</th><td>단가(온라인 소매가 기준) ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.materialUnit} × ${formatQty(b.purchaseLength)}${b.materialUnit} = ${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</td></tr>
-        <tr><th>부자재비</th><td>${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)} (프라이머·사포·마스킹테이프 등, 자재비의 10%)</td></tr>
-        <tr><th>배송비</th><td>${formatWon(b.deliveryFee)}</td></tr>
-        <tr><th>인건비</th><td>${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)} (${b.laborNote})</td></tr>
-        <tr class="doc-total-row"><th>합계 (예상)</th><td>${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</td></tr>
       </table>
+
+      <div class="doc-receipt">
+        <div class="doc-receipt-group">자재비</div>
+        <div class="doc-receipt-row"><span>필름 자재비</span><span class="rl"></span><span class="amt">${formatWon(b.filmLow)} ~ ${formatWon(b.filmHigh)}</span></div>
+        <div class="doc-receipt-note">단가(온라인 소매가 기준) ${formatWon(b.priceLow)}~${formatWon(b.priceHigh)}/${b.materialUnit} × 구매 길이 ${formatQty(b.purchaseLength)}${b.materialUnit}(로스율 12% 포함)${b.fireRetardant ? " · 방염 할증 반영" : ""}</div>
+        <div class="doc-receipt-row"><span>부자재비</span><span class="rl"></span><span class="amt">${formatWon(b.ancillaryLow)} ~ ${formatWon(b.ancillaryHigh)}</span></div>
+        <div class="doc-receipt-note">프라이머·사포·마스킹테이프 등, 자재비의 10%</div>
+        <div class="doc-receipt-row"><span>배송비</span><span class="rl"></span><span class="amt">${formatWon(b.deliveryFee)}</span></div>
+        <div class="doc-receipt-row subtotal"><span>소계</span><span class="rl"></span><span class="amt">${formatWon(b.materialLow)} ~ ${formatWon(b.materialHigh)}</span></div>
+
+        <div class="doc-receipt-group">인건비</div>
+        <div class="doc-receipt-row"><span>시공 인건비</span><span class="rl"></span><span class="amt">${formatWon(b.laborLow)} ~ ${formatWon(b.laborHigh)}</span></div>
+        <div class="doc-receipt-note">${b.laborNote}</div>
+
+        <div class="doc-receipt-total">
+          <span class="doc-receipt-total-label">합계 (예상)</span>
+          <span class="doc-receipt-total-value">${formatWon(b.totalLow)} ~ ${formatWon(b.totalHigh)}</span>
+          <div class="doc-ratio">
+            <div class="doc-ratio-bar">
+              <span class="doc-ratio-seg doc-ratio-material" style="width:${docRatio.pctMaterial}%"></span>
+              <span class="doc-ratio-seg doc-ratio-labor" style="width:${docRatio.pctLabor}%"></span>
+            </div>
+            <div class="doc-ratio-legend">
+              <span class="doc-ratio-item"><i class="doc-ratio-dot doc-ratio-dot-material"></i>자재비 <b>${docRatio.pctMaterial}%</b></span>
+              <span class="doc-ratio-item"><i class="doc-ratio-dot doc-ratio-dot-labor"></i>인건비 <b>${docRatio.pctLabor}%</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="doc-section">

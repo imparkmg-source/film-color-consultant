@@ -16,6 +16,8 @@
   --glass: rgba(210, 226, 236, 0.55);
   --font-display: "Gowun Dodum", "Noto Sans KR", sans-serif;
   --font-body: "Noto Sans KR", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --chart-material: #6c63a6;
+  --chart-labor: #c97b4a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,6 +36,8 @@
     --glass: rgba(120, 150, 170, 0.28);
     --shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+    --chart-material: #8f7fe0;
+    --chart-labor: #c97b4a;
   }
 }
 :root[data-theme="dark"] {
@@ -51,6 +55,8 @@
   --glass: rgba(120, 150, 170, 0.28);
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --chart-material: #8f7fe0;
+  --chart-labor: #c97b4a;
 }
 
 * { box-sizing: border-box; }
@@ -610,6 +616,29 @@ h1, h2, h3 {
   display: block; font-family: var(--font-display); font-size: 24px;
   color: var(--accent); font-variant-numeric: tabular-nums;
 }
+.receipt-ratio { margin-top: 12px; }
+.receipt-ratio-bar {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  max-width: 240px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.receipt-ratio-seg { display: block; height: 100%; }
+.receipt-ratio-material { background: var(--chart-material); }
+.receipt-ratio-labor { background: var(--chart-labor); }
+.receipt-ratio-legend {
+  display: flex; justify-content: center; gap: 16px;
+  margin-top: 7px; font-size: 11px; color: var(--ink-soft);
+}
+.receipt-ratio-item { display: inline-flex; align-items: center; gap: 5px; }
+.receipt-ratio-item b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ratio-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; font-style: normal; }
+.ratio-dot-material { background: var(--chart-material); }
+.ratio-dot-labor { background: var(--chart-labor); }
 
 /* Estimate ("견적서") button + modal */
 .estimate-btn { margin-top: 14px; width: 100%; text-align: center; }
@@ -699,6 +728,45 @@ h1, h2, h3 {
 .estimate-doc table th { color: #7a7490; font-weight: 600; width: 34%; }
 .estimate-doc table td { font-variant-numeric: tabular-nums; }
 .estimate-doc .doc-total-row td { font-weight: 800; color: #6c63a6; font-size: 14.5px; }
+
+/* 예상 견적 항목 명세 — 앱 화면의 영수증 스타일과 통일 */
+.estimate-doc .doc-receipt { border: 1px solid #ece7f6; border-radius: 10px; padding: 14px 18px; }
+.estimate-doc .doc-receipt-group {
+  font-size: 11px; font-weight: 700; color: #6c63a6;
+  letter-spacing: 0.4px; text-transform: uppercase; margin: 12px 0 6px;
+}
+.estimate-doc .doc-receipt-group:first-child { margin-top: 0; }
+.estimate-doc .doc-receipt-row { display: flex; align-items: flex-end; gap: 6px; font-size: 12.5px; padding: 3px 0; color: #26232e; }
+.estimate-doc .doc-receipt-row .rl { flex: 1; border-bottom: 1px dotted #d8d2e6; margin-bottom: 4px; }
+.estimate-doc .doc-receipt-row .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.estimate-doc .doc-receipt-row.subtotal { font-weight: 700; margin-top: 2px; }
+.estimate-doc .doc-receipt-note { font-size: 10.5px; color: #9c96ac; line-height: 1.5; margin: -1px 0 4px; }
+.estimate-doc .doc-receipt-total {
+  text-align: center; margin-top: 14px; padding-top: 12px; border-top: 3px double #26232e;
+}
+.estimate-doc .doc-receipt-total-label { display: block; font-size: 12px; color: #7a7490; margin-bottom: 4px; }
+.estimate-doc .doc-receipt-total-value {
+  display: block; font-family: var(--font-display); font-size: 21px;
+  color: #6c63a6; font-variant-numeric: tabular-nums;
+}
+.estimate-doc .doc-ratio { margin-top: 10px; }
+.estimate-doc .doc-ratio-bar {
+  display: flex; gap: 2px; height: 12px; max-width: 220px; margin: 0 auto;
+  border-radius: 999px; background: #ece7f6; overflow: hidden;
+}
+.estimate-doc .doc-ratio-seg { display: block; height: 100%; }
+.estimate-doc .doc-ratio-material { background: #6c63a6; }
+.estimate-doc .doc-ratio-labor { background: #c97b4a; }
+.estimate-doc .doc-ratio-legend {
+  display: flex; justify-content: center; gap: 14px;
+  margin-top: 6px; font-size: 10.5px; color: #7a7490;
+}
+.estimate-doc .doc-ratio-item { display: inline-flex; align-items: center; gap: 5px; }
+.estimate-doc .doc-ratio-item b { color: #26232e; font-weight: 700; font-variant-numeric: tabular-nums; }
+.estimate-doc .doc-ratio-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; font-style: normal; }
+.estimate-doc .doc-ratio-dot-material { background: #6c63a6; }
+.estimate-doc .doc-ratio-dot-labor { background: #c97b4a; }
+
 .estimate-doc .doc-footer {
   margin-top: 24px;
   padding-top: 14px;
