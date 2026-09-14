@@ -288,6 +288,7 @@ h1, h2, h3 {
   width: 100%;
   box-shadow: var(--shadow-lg);
   position: relative;
+  overflow: hidden;
   animation: pop 0.18s ease;
 }
 @keyframes pop {
@@ -310,6 +311,7 @@ h1, h2, h3 {
 }
 .modal-left, .modal-right {
   padding: 28px 26px;
+  min-width: 0; /* 그리드 아이템 기본 min-width:auto가 고정폭 3D 목업 때문에 모달 전체를 늘리는 것 방지 */
 }
 .modal-left { border-right: 1px solid var(--line); }
 .modal-left h3 { margin: 8px 0 2px; font-size: 20px; }
@@ -359,6 +361,8 @@ h1, h2, h3 {
   background: radial-gradient(ellipse at 50% 100%, var(--stage-glow), transparent 70%);
   border-radius: 12px;
   margin-bottom: 14px;
+  max-width: 100%;
+  overflow: hidden; /* 회전된 3D 면이 좁은 화면에서 스테이지 밖으로 번지는 것을 자름 */
 }
 
 .mockup3d {
